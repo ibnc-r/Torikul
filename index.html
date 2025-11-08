@@ -101,6 +101,7 @@
             transition: all 0.3s ease;
             color: white;
             background: var(--primary-green);
+            margin-bottom: 10px; /* Added margin for stacking control buttons */
         }
         .control-btn:hover {
             background: var(--primary-green-light);
@@ -132,13 +133,13 @@
             border: 1px solid var(--glass-light-border);
         }
         body.light-mode .profile-card {
-            background: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.7); /* Opacity Increased */
             border: 1px solid var(--glass-dark-border);
         }
         
         .profile-img {
-            width: 300px;
-            height: 300px;
+            width: 150px; /* Reduced size for better mobile fit */
+            height: 150px;
             border-radius: 50%;
             border: 3px solid var(--primary-green);
             object-fit: cover;
@@ -178,13 +179,13 @@
             font-size: 0.95rem;
         }
         body.dark-mode .info-item { background: rgba(0,0,0,0.2); }
-        body.light-mode .info-item { background: rgba(255,255,255,0.7); }
+        body.light-mode .info-item { background: rgba(255,255,255,0.8); } /* Opacity Increased */
         .info-item i { color: var(--primary-green); }
 
         /* --- GLASSMORPHISM BUTTONS --- */
         .link-list {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Adjusted for more buttons */
             gap: 15px;
             margin-top: 20px;
         }
@@ -201,6 +202,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
         body.dark-mode .link-btn {
             background: var(--glass-light-bg);
@@ -222,7 +224,86 @@
             margin-right: 12px;
             font-size: 1.3rem;
         }
+        
+        /* --- SAVE CONTACT BUTTON --- */
+        .save-contact-btn {
+            margin: 30px auto 10px;
+            display: inline-block;
+            background: var(--primary-green);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .save-contact-btn:hover {
+            background: var(--primary-green-light);
+            transform: scale(1.05);
+        }
 
+
+        /* --- INTERACTIVE CONTACT FORM STYLES --- */
+        .interactive-form-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--glass-light-border);
+            display: none; /* Initially hidden */
+            text-align: left;
+            animation: fadeIn 0.5s ease-out;
+        }
+        body.light-mode .interactive-form-container { background: rgba(255,255,255,0.7); }
+        body.dark-mode .interactive-form-container { background: rgba(0,0,0,0.15); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .interactive-form-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--primary-green);
+        }
+        .interactive-form-container input[type="text"],
+        .interactive-form-container textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: transparent;
+            color: inherit;
+        }
+        .interactive-form-container textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .char-count {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--primary-green);
+            text-align: right;
+        }
+        .form-send-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-green);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .form-send-btn:hover {
+            background: var(--primary-green-light);
+        }
+        
         /* --- SECTIONS --- */
         section {
             margin: 50px 0;
@@ -234,7 +315,7 @@
             border: 1px solid var(--glass-light-border);
         }
         body.light-mode section { 
-            background: rgba(255,255,255,0.6); 
+            background: rgba(255,255,255,0.7); /* Opacity Increased */
             border: 1px solid var(--glass-dark-border);
         }
         h2 {
@@ -251,7 +332,7 @@
             margin: 0 auto 20px;
         }
 
-        /* --- HOBBIES GRID (UPDATED STYLE) --- */
+        /* --- HOBBIES GRID (UNCHANGED) --- */
         .hobbies-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -281,7 +362,7 @@
             border-color: var(--primary-green-light);
         }
         
-        /* --- NEW GALLERY GRID --- */
+        /* --- GALLERY GRID (UNCHANGED) --- */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -300,7 +381,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        /* --- QUOTE & FOOTER --- */
+        /* --- QUOTE & FOOTER (UNCHANGED) --- */
         blockquote {
             font-size: 1.2rem;
             font-style: italic;
@@ -321,7 +402,11 @@
         /* --- RESPONSIVE DESIGN --- */
         @media (min-width: 576px) {
             .link-list {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+            .profile-img {
+                width: 150px; 
+                height: 150px;
             }
         }
         
@@ -384,10 +469,11 @@
         <section class="online-links" data-aos="fade-up">
             <h2>Find Me Online</h2>
             <div class="link-list">
-                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram-plane"></i> Main Channel</a>
-                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram-plane"></i> Second Channel</a>
+                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i> Facebook</a>
+                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram-plane"></i> Telegram</a>
+                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-x-twitter"></i> X (Treats)</a>
                 <a href="https://github.com/nayem-48ai" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i> GitHub</a>
-                <a href="#" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook"></i> Facebook</a>
             </div>
         </section>
 
@@ -426,14 +512,25 @@
             </blockquote>
         </section>
 
+        <a href="data:text/vcard;charset=utf-8,BEGIN:VCARD%0AVERSION:3.0%0AFN:MD%20TARIKUL%20ISLAM%20NAIM%0ANICKNAME:Tnayem48%0AORG:ISLAMI%20BANK%20NURSING%20COLLEGE%0ATITLE:Student%20Nurse%0ATEL;TYPE=CELL:%2B8801719470590%0AEMAIL:mdtorikulislam5748%40gmail.com%0AADR;TYPE=WORK:Bagmara%2C%20Rajshahi%2C%20Bangladesh%0AEND:VCARD" 
+           download="MD%20TARIKUL%20ISLAM%20NAIM.vcf" 
+           class="save-contact-btn" 
+           data-aos="fade-up">
+           <i class="fas fa-address-book"></i> Save Contact (VCF)
+        </a>
+
         <section class="contact" data-aos="fade-up">
             <h2>Contact Me</h2>
             <p>Want to connect, share ideas, or ask a question? Reach out through any of the channels below. I'm always excited to hear from my community!</p>
             <div class="link-list">
-                <a href="https://t.me/Tnayem48/" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram-plane"></i> Telegram Bot</a>
-                <a href="mailto: mdtorikulislam5748@gmail.com" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fas fa-envelope"></i> Email</a>
                 <a href="tel:+8801719470590" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fas fa-phone"></i> Phone</a>
+                <button class="link-btn" onclick="openContactForm('sms')"><i class="fas fa-comment-alt"></i> Message</button>
+                <button class="link-btn" onclick="openContactForm('whatsapp')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                <button class="link-btn" onclick="openContactForm('email')"><i class="fas fa-envelope"></i> Gmail</button>
             </div>
+            
+            <div id="contact-form-container" class="interactive-form-container">
+                </div>
         </section>
 
         <footer>
@@ -444,28 +541,46 @@
 
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
-      AOS.init({
-        duration: 800,
-        once: true,
-      });
+        AOS.init({
+            duration: 800,
+            once: true,
+        });
     </script>
     
     <script>
         const body = document.body;
         const themeIcon = document.getElementById('theme-icon');
-        // Re-added Audio variables
         const audio = document.getElementById('bgm');
         const musicIcon = document.getElementById('music-icon');
+        const formContainer = document.getElementById('contact-form-container');
+        const MAX_SMS_LENGTH = 160;
+        
+        // --- LOCAL STORAGE & INITIAL THEME SETUP (FIXED) ---
+        function setInitialTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark-mode') {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+            }
+            updateThemeIcon();
+        }
 
-        // --- Theme Toggle Function ---
+        // --- Theme Toggle Function (FIXED) ---
         function toggleTheme() {
             body.classList.toggle('dark-mode');
             body.classList.toggle('light-mode');
             
+            // Save preference to Local Storage
+            const currentTheme = body.classList.contains('dark-mode') ? 'dark-mode' : 'light-mode';
+            localStorage.setItem('theme', currentTheme);
+
             updateThemeIcon();
         }
         
-        // --- Function to update theme icon ---
+        // --- Function to update theme icon (FIXED) ---
         function updateThemeIcon() {
             if (body.classList.contains('dark-mode')) {
                 themeIcon.classList.remove('fa-moon');
@@ -476,7 +591,7 @@
             }
         }
 
-        // --- Audio Control (Re-added) ---
+        // --- Audio Control (FIXED) ---
         function toggleMusic() {
             if (audio.paused) {
                 audio.play().then(() => {
@@ -484,7 +599,6 @@
                     musicIcon.classList.add('fa-pause');
                 }).catch(error => {
                     console.error("Audio playback failed:", error);
-                    // If play fails (e.g., no valid src), reset the icon
                     musicIcon.classList.remove('fa-pause');
                     musicIcon.classList.add('fa-music');
                 });
@@ -494,10 +608,95 @@
                 musicIcon.classList.add('fa-music');
             }
         }
+
+        // --- INTERACTIVE CONTACT FORM LOGIC ---
+        function openContactForm(type) {
+            formContainer.style.display = 'block';
+            formContainer.innerHTML = ''; // Clear previous content
+
+            let formHTML = '';
+            let submitAction = '';
+            let title = '';
+
+            if (type === 'sms') {
+                title = 'Send an SMS';
+                submitAction = `sendSMS()`;
+                formHTML = `
+                    <label for="sms-message">Message (Max ${MAX_SMS_LENGTH} characters):</label>
+                    <textarea id="sms-message" oninput="countChars(this, 'sms-char-count')" maxlength="${MAX_SMS_LENGTH}" placeholder="Type your short message..."></textarea>
+                    <span id="sms-char-count" class="char-count">${MAX_SMS_LENGTH} characters remaining</span>
+                    <button class="form-send-btn" onclick="${submitAction}">Send SMS</button>
+                `;
+            } else if (type === 'whatsapp') {
+                title = 'Send a WhatsApp Message';
+                submitAction = `sendWhatsApp()`;
+                formHTML = `
+                    <label for="whatsapp-message">Message:</label>
+                    <textarea id="whatsapp-message" placeholder="Type your WhatsApp message..."></textarea>
+                    <button class="form-send-btn" onclick="${submitAction}">Send via WhatsApp</button>
+                `;
+            } else if (type === 'email') {
+                title = 'Send a Gmail';
+                submitAction = `sendEmail()`;
+                formHTML = `
+                    <label for="email-subject">Subject:</label>
+                    <input type="text" id="email-subject" placeholder="Enter your subject line">
+                    <label for="email-body">Message:</label>
+                    <textarea id="email-body" placeholder="Write your full email message here..."></textarea>
+                    <button class="form-send-btn" onclick="${submitAction}">Send Gmail</button>
+                `;
+            }
+
+            formContainer.innerHTML = `<h3>${title}</h3><hr style="border-color: var(--primary-green); margin: 10px 0;">` + formHTML;
+            AOS.refresh(); // Refresh AOS to animate the new form
+        }
+
+        function countChars(textarea, countId) {
+            const currentLength = textarea.value.length;
+            const remaining = MAX_SMS_LENGTH - currentLength;
+            document.getElementById(countId).textContent = `${remaining} characters remaining`;
+        }
+
+        function sendSMS() {
+            const message = document.getElementById('sms-message').value.trim();
+            if (message) {
+                // 'sms:' protocol works on most mobile devices for sending SMS
+                window.location.href = `sms:+8801719470590?body=${encodeURIComponent(message)}`;
+                // Optionally clear the form after attempt
+                // formContainer.innerHTML = '<p style="text-align:center; color:var(--primary-green);">SMS app opened. Message sent!</p>';
+            } else {
+                alert('Please enter a message to send.');
+            }
+        }
+
+        function sendWhatsApp() {
+            const message = document.getElementById('whatsapp-message').value.trim();
+            if (message) {
+                // WhatsApp URL scheme
+                window.open(`https://wa.me/+8801719470590?text=${encodeURIComponent(message)}`, '_blank');
+            } else {
+                alert('Please enter a message to send via WhatsApp.');
+            }
+        }
+
+        function sendEmail() {
+            const subject = document.getElementById('email-subject').value.trim();
+            const bodyText = document.getElementById('email-body').value.trim();
+            const emailAddress = 'mdtorikulislam5748@gmail.com';
+
+            if (subject && bodyText) {
+                window.location.href = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+            } else {
+                alert('Please fill in both the Subject and Message fields for the email.');
+            }
+        }
         
         // --- Set initial theme icon on page load ---
         document.addEventListener('DOMContentLoaded', () => {
-            updateThemeIcon();
+            setInitialTheme(); // Load theme from Local Storage
+            // Initialize music icon (it should be 'play' when paused initially)
+            musicIcon.classList.remove('fa-pause'); 
+            musicIcon.classList.add('fa-music');
         });
     </script>
 </body>
