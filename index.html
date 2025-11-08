@@ -512,16 +512,12 @@
             </blockquote>
         </section>
 
-        <a href="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/MD%20TARIKUL%20ISLAM%20NAIM.vcf" 
-   download="MD TARIKUL ISLAM NAIM.vcf" 
+        <a href="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/MD%20TARIKUL%20ISLAM%20NAIM.vcf"
+   download="MD%20TARIKUL%20ISLAM%20NAIM.vcf" 
    class="save-contact-btn" 
-   data-aos="fade-up"
-   target="_blank"  
-   rel="noopener noreferrer"
-   data-vcf-url="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/MD%20TARIKUL%20ISLAM%20NAIM.vcf"
-   onclick="return forceDownload(this)">
+   data-aos="fade-up">
    <i class="fas fa-address-book"></i> Save Contact (VCF)
-        </a>
+</a>
 
         <section class="contact" data-aos="fade-up">
             <h2>Contact Me</h2>
@@ -612,29 +608,6 @@
                 musicIcon.classList.add('fa-music');
             }
         }
-
-        // --- NEW: Function to force VCF download from GitHub link ---
-function forceDownload(element) {
-    const url = element.getAttribute('data-vcf-url');
-    const filename = element.getAttribute('download');
-    
-    // Check if the link works directly
-    if (url) {
-        // Create a temporary anchor element
-        const tempLink = document.createElement('a');
-        tempLink.style.display = 'none';
-        tempLink.href = url;
-        tempLink.setAttribute('download', filename); // Set the filename
-        
-        // Append the link to the body and click it programmatically
-        document.body.appendChild(tempLink);
-        tempLink.click();
-        document.body.removeChild(tempLink); // Clean up
-    }
-    
-    // Prevent default action (which might open the link in the same tab)
-    return false;
-}
 
         // --- INTERACTIVE CONTACT FORM LOGIC ---
         function openContactForm(type) {
