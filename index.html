@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="A student of ISLAMI BANK NURSING COLLEGE, Rajshahi">
+    <meta name="keywords" content="A Student, social worker, Helpfulness, Bangladeshi.">
+    <meta name="author" content="MD TARIKUL ISLAM">
+    <title>TARIKUL ISLAM | Student Nurse</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- নতুন লাইব্রেরি লিঙ্ক -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    
+    <!-- GSAP লাইব্রেরি -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <style>
+        :root {
+            /* Color Palette - প্রাইমারি কালর ভেরিয়েবল যুক্ত করা হল */
+            --color-primary: #27ae60; /* নতুন প্রাইমারি কালর ভেরিয়েবল */
+            --primary-green: #27ae60;
+            --primary-green-light: #2ecc71;
+            --dark-bg: #121212;
+            --light-bg: #f4f9f4;
+            --text-dark: #1a1a1a;
+            --text-light: #e0e0e0;
+            --text-muted-dark: #555;
+            --text-muted-light: #bbb;
+            --glass-light-bg: rgba(255, 255, 255, 0.1);
+            --glass-dark-bg: rgba(0, 0, 0, 0.1);
+            --glass-light-border: rgba(255, 255, 255, 0.2);
+            --glass-dark-border: rgba(0, 0, 0, 0.2);
+        }
+        /* block horizontal scrolling */
+        html, body {
+            overflow-x: hidden;
+            cursor: auto !important; /* ডেস্কটপে কার্সর দেখাবে */
+        }
+        
+        /* মোবাইলে কার্সর লুকানো */
+        @media (max-width: 768px) {
+            html, body {
+                cursor: auto !important;
+            }
+            .cursor-dot, .cursor-outline {
+                display: none !important;
+            }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+        
+        /* ========== ৪. Custom Interactive Cursor (ডেস্কটপে শুধুমাত্র) ========== */
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--color-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            display: none; /* ডিফল্ট লুকানো */
+        }
+        
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--color-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transition: all 0.3s ease-out;
+            opacity: 0.7;
+            display: none; /* ডিফল্ট লুকানো */
+        }
+        
+        /* শুধুমাত্র ডেস্কটপে কার্সর দেখাবে */
+        @media (min-width: 769px) {
+            .cursor-dot, .cursor-outline {
+                display: block;
+            }
+            html, body {
+                cursor: none !important;
+            }
+            a, button, .link-btn, .save-contact-btn, .form-send-btn, .control-btn {
+                cursor: none !important;
+            }
+        }
+        
+        .cursor-dot.link-hover {
+            transform: scale(3);
+            background-color: #ff4757;
+        }
+        
+        .cursor-outline.link-hover {
+            transform: scale(1.5);
+            border-color: #ff4757;
+            opacity: 0.5;
+        }
+        
+        .cursor-dot.text-hover {
+            width: 4px;
+            height: 20px;
+            border-radius: 2px;
+            background-color: #3742fa;
+        }
+        
+        .cursor-outline.text-hover {
+            opacity: 0;
+        }
+        
+/* ========== Glossy Mesh Background - Deep Dark Aesthetic ==========*/
+        .glossy-mesh-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -2;
+        background: radial-gradient(circle at center, #0d0d0d 0%, #050505 100%);
+        overflow: hidden;
+        display: none;
+        }
+
+        body.dark-mode .glossy-mesh-bg {
+        display: block;
+        }
+
+.mesh-ball {
+    position: absolute;
+    border-radius: 50%;
+    /* ছোট সাইজ কিন্তু তীব্র ব্লার */
+    filter: blur(40px); 
+    opacity: 0.4;
+    mix-blend-mode: plus-lighter; /* এটি ডার্ক থিমে আরও প্রিমিয়াম গ্লো দেয় */
+    animation: floatingOrbs 15s infinite ease-in-out;
+}
+
+/* আরও ছোট এবং উজ্জ্বল রঙিন বল */
+.ball-1 {
+    width: 60px;
+    height: 60px;
+    background: var(--color-primary);
+    top: 20%;
+    left: 15%;
+    box-shadow: 0 0 50px var(--color-primary); /* ইনার গ্লো */
+}
+
+.ball-2 {
+    width: 50px;
+    height: 50px;
+    background: #3498db;
+    bottom: 25%;
+    right: 20%;
+    animation-delay: -3s;
+    box-shadow: 0 0 40px #3498db;
+}
+
+.ball-3 {
+    width: 45px;
+    height: 45px;
+    background: #9b59b6;
+    top: 60%;
+    left: 40%;
+    animation-delay: -6s;
+    opacity: 0.3;
+    box-shadow: 0 0 30px #9b59b6;
+}
+
+/* চতুর্থ একটি ছোট বল যোগ করতে পারো একরাশ রঙের মেলার জন্য */
+.ball-4 {
+    width: 40px;
+    height: 40px;
+    background: #f1c40f; /* গোল্ডেন আভা */
+    bottom: 40%;
+    left: 10%;
+    animation-delay: -9s;
+    opacity: 0.2;
+}
+
+/* প্রিমিয়াম ফ্লোটিং অ্যানিমেশন */
+@keyframes floatingOrbs {
+    0%, 100% { 
+        transform: translate(0, 0) scale(1); 
+        opacity: 0.3;
+    }
+    50% { 
+        transform: translate(60px, -80px) scale(1.3); 
+        opacity: 0.5; /* মাঝপথে গ্লো বাড়বে */
+    }
+}
+
+/* কার্ডগুলোতে আরও প্রিমিয়াম গ্লাস লুক */
+body.dark-mode .profile-card, 
+body.dark-mode section {
+    background: rgba(255, 255, 255, 0.01) !important; /* আরও স্বচ্ছ */
+    backdrop-filter: blur(20px) saturate(150%); /* কালার বুস্ট করবে */
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+        /* ========== Profile Bubble Message (Premium Glassy Look) ========== */
+.profile-bubble {
+    position: absolute;
+    top: 0; 
+    left: 55%; 
+    /* গ্ল্যাসি ইফেক্ট */
+    background: rgba(255, 255, 255, 0.4); 
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    color: var(--color-primary); 
+    padding: 12px 20px;
+    border-radius: 15px;
+    border-bottom-left-radius: 2px; 
+    font-size: 1.1rem;
+    font-weight: 700;
+    z-index: 100;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    min-height: 50px; 
+    min-width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: bottom left;
+}
+
+/* ডার্ক মোডে গ্ল্যাসি লুক */
+body.dark-mode .profile-bubble {
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+/* টেল (Tail) পজিশন আপডেট */
+.profile-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -9px;
+    left: 10px;
+    width: 15px;
+    height: 10px;
+    background-color: inherit; /* মেইন বাবলের গ্ল্যাসি কালার পাবে */
+    backdrop-filter: blur(10px);
+    clip-path: polygon(0 0, 100% 0, 20% 100%);
+}
+
+
+/* শুধুমাত্র উপরে-নিচে হালকা ফ্লোটিং এনিমেশন (translateX সরানো হয়েছে) */
+@keyframes bubbleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.profile-bubble.animated {
+    animation: bubbleFloat 3s ease-in-out infinite;
+}
+        
+        .profile-card {
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 20px; 
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+            position: relative; /* Bubble এর জন্য প্রয়োজন */
+        }
+        
+        /* ========== ২. Theme & Color Picker (আপডেটেড) ========== */
+        .theme-dialog {
+            display: none;
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            /* গ্লাস ইফেক্টের মূল অংশ */
+            background: rgba(255, 255, 255, 0.4); /* হালকা সাদা ব্যাকগ্রাউন্ড */
+            backdrop-filter: blur(15px) saturate(180%); /* ঝাপসা এবং কালার বুস্ট */
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+    /* শাইন এবং বর্ডার */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1001;
+            width: 200px;
+        }
+        
+        /* ডার্ক মোডের জন্য গ্ল্যাসি লুক */
+body.dark-mode .theme-dialog {
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+}
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* বাটন স্টাইল New */
+.theme-toggle-btn {
+    background: transparent;
+    border: 2px solid var(--color-primary, #27ae60);
+    border-radius: 12px;
+    width: 50%;
+    height: 50px;
+    display: flex;
+    margin: 0 auto 15px auto;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    color: #333;
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* ডার্ক মোডে বাটনের টেক্সট/আইকন কালার */
+body.dark-mode .theme-toggle-btn {
+    color: #fff;
+    border-color: #fff;
+}
+
+/* আইকন পরিবর্তনের লজিক */
+.theme-toggle-btn .moon-icon {
+    display: none; /* ডিফল্টভাবে চাঁদ লুকানো থাকবে */
+}
+
+.theme-toggle-btn .sun-icon {
+    display: block; /* ডিফল্টভাবে সূর্য দেখা যাবে */
+}
+
+/* ডার্ক মোড অ্যাক্টিভ হলে সূর্য লুকাবে আর চাঁদ দেখাবে */
+body.dark-mode .theme-toggle-btn .sun-icon {
+    display: none;
+}
+
+body.dark-mode .theme-toggle-btn .moon-icon {
+    display: block;
+    color: var(--color-primary, #27ae60); /* চাঁদের রঙ theme color দেওয়া হয়েছে */
+}
+
+/* আইকন অ্যানিমেশন */
+.theme-toggle-btn svg {
+    width: 30px;
+    height: 30px;
+    transition: transform 0.5s ease;
+}
+
+.theme-toggle-btn:active svg {
+    transform: rotate(45deg) scale(0.9);
+}
+
+        .theme-options {
+            margin-top: 15px;
+        }
+        
+        .theme-options h4 {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: var(--color-primary);
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .color-option {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.active {
+            border-color: #333;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        
+        body.dark-mode .color-option.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+        
+        /* ========== ৩. Visual Journey (Swiper - আপনার এক্সাম্পল অনুযায়ী) ========== */
+        /* Swiper মেইন কন্টেইনার */
+        .swiper {
+            width: 100%;
+            padding: 50px 0;
+            margin: 20px 0;
+        }
+        
+        /* Swiper স্লাইড - আপনার এক্সাম্পল কোড থেকে নেওয়া */
+        .swiper-slide { 
+            width: 300px !important; 
+            height: 400px !important; 
+            border-radius: 20px; 
+            border: 4px solid white; 
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        /* ডার্ক মোডে স্লাইড বর্ডার */
+        body.dark-mode .swiper-slide { 
+            border-color: #1f2937; 
+            box-shadow: 0 10px 20px 2px color-mix(in srgb, var(--color-primary), transparent 80%);
+        }
+        
+        /* ইমেজ স্টাইল */
+        .swiper-slide img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transition: transform 0.5s ease;
+        }
+        
+        /* হোভার এফেক্ট */
+        .swiper-slide:hover img {
+            transform: scale(1.05);
+        }
+        
+        /* Coverflow ইফেক্টের জন্য অতিরিক্ত স্টাইল */
+        .swiper-3d .swiper-slide-shadow-left,
+        .swiper-3d .swiper-slide-shadow-right {
+            background-image: linear-gradient(to left, rgba(0,0,0,0.5), rgba(0,0,0,0));
+            border-radius: 20px;
+        }
+        
+        /* Swiper নেভিগেশন বাটন লুকানো */
+        .swiper-button-next, .swiper-button-prev {
+            display: none !important;
+        }
+        
+        /* Swiper পেজিনেশন লুকানো */
+        .swiper-pagination {
+            display: none !important;
+        }
+        
+        /* ========== বাকি CSS ========== */
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            transition: background 0.5s ease, color 0.5s ease, --color-primary 0.5s ease;
+            overflow-x: hidden;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        
+        body.dark-mode {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            background-image: linear-gradient(135deg, #0d1a13, #121212);
+        }
+        
+        body.light-mode {
+            background: var(--light-bg);
+            color: var(--text-dark);
+            background-image: linear-gradient(135deg, #e0f2f1, #f4f9f4);
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            padding: 5px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .controls-right {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .controls-left {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            color: white;
+            background: var(--color-primary);
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .control-btn:hover {
+            background: var(--primary-green-light);
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        
+        .theme-btn-icon {
+            transition: transform 0.5s ease;
+        }
+        
+        @keyframes fadeInDelayed {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .music-toggle {
+            animation: fadeInDelayed 0.8s ease-out 1.5s;
+            animation-fill-mode: backwards;
+        }
+        
+        audio { display: none; }
+        
+        body.dark-mode .profile-card {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid var(--glass-light-border);
+        }
+        
+        body.light-mode .profile-card {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid var(--glass-dark-border);
+        }
+        
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            border-radius: 50%;
+            border: 3px solid var(--color-primary);
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        body.light-mode h1 { color: var(--text-dark); }
+        body.dark-mode h1 { color: var(--text-light); }
+        
+        h1 span { color: var(--color-primary); }
+        
+        p.tagline {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+        }
+        
+        body.light-mode p.tagline { color: var(--text-muted-dark); }
+        body.dark-mode p.tagline { color: var(--text-muted-light); }
+        
+        .profile-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+        }
+        
+        body.dark-mode .info-item { background: rgba(0,0,0,0.2); }
+        body.light-mode .info-item { background: rgba(255,255,255,0.8); }
+        
+        .info-item i { color: var(--color-primary); }
+        
+        .link-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        body.dark-mode .link-btn {
+            background: var(--glass-light-bg);
+            border: 1px solid var(--glass-light-border);
+            color: var(--color-primary);
+        }
+        
+        body.light-mode .link-btn {
+            background: var(--glass-dark-bg);
+            border: 1px solid var(--glass-dark-border);
+            color: var(--text-dark);
+        }
+        
+        .link-btn:hover {
+            transform: translateY(-5px);
+            background: var(--color-primary);
+            color: #fff;
+            border-color: var(--color-primary);
+        }
+        
+        .link-btn i {
+            margin-right: 12px;
+            font-size: 1.3rem;
+        }
+        
+        .save-contact-btn {
+            margin: 30px auto 10px;
+            display: inline-block;
+            background: var(--color-primary);
+            color: white;
+            border-radius: 20px 0 20px 0;
+            padding: 12px 25px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .save-contact-btn:hover {
+            background: var(--primary-green-light);
+            transform: scale(1.05);
+        }
+        
+        .interactive-form-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--glass-light-border);
+            display: none;
+            text-align: left;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        body.light-mode .interactive-form-container { background: rgba(255,255,255,0.7); }
+        body.dark-mode .interactive-form-container { background: rgba(0,0,0,0.15); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .interactive-form-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+        
+        .interactive-form-container input[type="text"],
+        .interactive-form-container textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: transparent;
+            color: inherit;
+        }
+        
+        .interactive-form-container textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .char-count {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--color-primary);
+            text-align: right;
+        }
+        
+        .form-send-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--color-primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .form-send-btn:hover {
+            background: var(--primary-green-light);
+        }
+        
+        section {
+            margin: 50px 0;
+            padding: 30px;
+            border-radius: 20px;
+        }
+        
+        body.dark-mode section { 
+            background: rgba(0,0,0,0.15); 
+            border: 1px solid var(--glass-light-border);
+        }
+        
+        body.light-mode section { 
+            background: rgba(255,255,255,0.7);
+            border: 1px solid var(--glass-dark-border);
+        }
+        
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            font-family: 'Playfair Display', serif;
+            color: var(--color-primary);
+        }
+        
+        p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+        
+        .hobbies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        
+        .hobby-item {
+            padding: 20px;
+            border-radius: 0 15px 15px 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        body.dark-mode .hobby-item { 
+            background: rgba(46, 204, 113, 0.1);
+            border-color: rgba(46, 204, 113, 0.3);
+            color: #c7e8d5;
+        }
+        
+        body.light-mode .hobby-item { 
+            background: rgba(46, 204, 113, 0.15);
+            border-color: rgba(46, 204, 113, 0.4);
+            color: #0c3d22;
+        }
+        
+        .hobby-item:hover {
+            transform: translateY(-8px);
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--primary-green-light);
+        }
+        
+        .gallery-grid {
+            display: none; /* পুরাতন গ্যালারি লুকানো, Swiper দেখানো হবে */
+        }
+        
+        blockquote {
+            font-size: 1.2rem;
+            font-style: italic;
+            border-left: 5px solid var(--color-primary);
+            padding-left: 20px;
+            margin: 40px auto;
+            max-width: 550px;
+            text-align: left;
+        }
+        
+        /* ========== Footer with Blinking Heart ========== */
+        footer {
+            margin-top: 60px;
+            font-size: 0.9rem;
+            padding: 20px 0;
+            border-top: 1px solid var(--glass-light-border);
+            position: relative;
+        }
+        
+        body.light-mode footer { 
+            border-top-color: var(--glass-dark-border); 
+        }
+        
+        .heart {
+            color: #ef4444; /* লাল রঙ */
+            display: inline-block;
+            font-size: 1.2rem;
+            animation: pulse-heart 1.2s infinite;
+            margin: 0 5px;
+        }
+        
+        @keyframes pulse-heart {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: scale(1.2); 
+                opacity: 0.8; 
+            }
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 576px) {
+            .link-list {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+            .profile-img {
+                width: 150px; 
+                height: 150px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body { 
+                padding: 1rem; 
+                cursor: auto !important;
+            }
+            h1 { 
+                font-size: 2.2rem; 
+            }
+            p.tagline { 
+                font-size: 1rem; 
+            }
+            .profile-img { 
+                width: 120px; 
+                height: 120px; 
+            }
+            h2 { 
+                font-size: 1.8rem; 
+            }
+            p { 
+                font-size: 1rem; 
+            }
+            .link-list {
+                grid-template-columns: 1fr;
+            }
+            .swiper {
+                padding: 30px 0;
+            }
+            .swiper-slide {
+                width: 280px !important;
+                height: 370px !important;
+            }
+            .theme-dialog {
+                right: 10px;
+                width: 180px;
+            }
+            .profile-bubble {
+            left: 50%;
+            top: -10px !important;
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            min-height: 40px;
+            min-width: 60px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .swiper {
+                padding: 20px 0;
+            }
+            .swiper-slide {
+                width: 250px !important;
+                height: 330px !important;
+            }
+            .profile-bubble {
+                font-size: 0.9rem;
+                padding: 6px 12px;
+                top: -12px;
+                max-width: 180px;
+            }
+        }
+        
+        /* Extra Small Screens */
+        @media (max-width: 360px) {
+            .swiper-slide {
+                width: 220px !important;
+                height: 290px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+        <div class="glossy-mesh-bg">
+    <div class="mesh-ball ball-1"></div>
+    <div class="mesh-ball ball-2"></div>
+    <div class="mesh-ball ball-3"></div>
+</div>
+
+    <!-- ========== Custom Cursor Elements (ডেস্কটপে শুধুমাত্র) ========== -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <div class="controls-left">
+        <button class="control-btn music-toggle" onclick="toggleMusic()" aria-label="Toggle Music">
+            <i class="fas fa-music" id="music-icon"></i>
+        </button>
+    </div>
+    
+    <div class="controls-right">
+        <!-- Theme Button (গোলাকার আইকন) -->
+        <button class="control-btn theme-toggle" onclick="toggleThemeDialog()" aria-label="Theme Settings">
+            <i class="fas fa-palette theme-btn-icon" id="theme-icon"></i>
+        </button>
+        
+        <!-- Theme Dialog Box -->
+        <div class="theme-dialog" id="themeDialog">
+            <h4>Theme Settings</h4>
+            <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+    </button>
+            
+            <div class="theme-options">
+                <h4>Primary Color</h4>
+                <div class="color-picker">
+                    <div class="color-option active" style="background-color: #27ae60;" data-color="#27ae60" onclick="changePrimaryColor('#27ae60')"></div>
+                    <div class="color-option" style="background-color: #3498db;" data-color="#3498db" onclick="changePrimaryColor('#3498db')"></div>
+                    <div class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6" onclick="changePrimaryColor('#9b59b6')"></div>
+                    <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c" onclick="changePrimaryColor('#e74c3c')"></div>
+                    <div class="color-option" style="background-color: #f39c12;" data-color="#f39c12" onclick="changePrimaryColor('#f39c12')"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <audio id="bgm" loop>
+        <source src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/audio.mp3" type="audio/mp3">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <div class="container">
+        <header class="profile-card" data-aos="fade-down">
+            <!-- Profile Bubble Message (আপডেটেড) -->
+            <div class="profile-bubble" id="profileBubble"></div>            
+
+            <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img">
+            
+            <h1>TARIKUL <span>ISLAM</span></h1>
+            <p class="tagline">A Student Nurse of ISLAMI BANK NURSING COLLEGE, RAJSHAHI.</p>
+            <ul class="profile-info">
+                <li class="info-item"><i class="fas fa-user-graduate"></i>Profession: Student Nurse</li>
+                <li class="info-item"><i class="fas fa-map-marker-alt"></i>Bagmara, Rajshahi, Bangladesh</li>
+                <li class="info-item"><i class="fas fa-birthday-cake"></i> 15-03-2004 </li>
+                <li class="info-item"><i class="fas fa-medkit"></i> B+ (ve) </li>
+            </ul>
+        </header>
+        
+        <section class="about" data-aos="fade-right">
+            <h2>About Me</h2>
+            <p>I, Tarikul Islam, am a student nurse, deeply passionate about continuous learning and believe that knowledge only becomes truly valuable when it is shared. Every day, I find joy in exploring new ideas, challenging myself to see the world from different perspectives, and discovering ways to make a meaningful impact. I believe growth is not just personal—it becomes powerful when it helps others rise as well. <br><br>This space is a reflection of my journey, where I collect my thoughts, document my explorations, and share them with those who, like me, believe in the power of learning and growth. Thank you sincerely for taking the time to stop by—it means more than words can express.</p>
+        </section>
+        
+        <section class="online-links" data-aos="fade-up">
+            <h2>Find Me Online</h2>
+            <div class="link-list">
+                <a href="https://www.facebook.com/share/17kBRUVmVA/" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i> Facebook</a>
+                <a href="https://t.me/Tnayem48" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-telegram-plane"></i> Telegram</a>
+                <a href="https://www.instagram.com/tnayem48?igsh=MWtpY2w3cTZodmhneQ==" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="https://www.threads.com/@tnayem48" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-x-twitter"></i> X (Treats)</a>
+                <a href="https://github.com/nayem-48ai" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i> GitHub</a>
+            </div>
+        </section>
+        
+        <section class="hobbies" data-aos="fade-left">
+            <h2>Hobbies & Interests</h2>
+            <div class="hobbies-grid">
+                <div class="hobby-item" data-aos="zoom-in" data-aos-delay="100">Helping people of all levels</div>
+                <div class="hobby-item" data-aos="zoom-in" data-aos-delay="200">Reading and learning daily new things</div>
+                <div class="hobby-item" data-aos="zoom-in" data-aos-delay="300">Watching educational and motivational videos or documentary</div>
+                <div class="hobby-item" data-aos="zoom-in" data-aos-delay="400">Traveling, exploring, taking pictures of sight or macro-creations or new places</div>
+                <div class="hobby-item" data-aos="zoom-in" data-aos-delay="500">Spending time with family and friends</div>
+            </div>
+        </section>
+        
+        <section class="gallery" data-aos="fade-right">
+            <h2>Gallery</h2>
+            <!-- Swiper Container (আপডেটেড - আপনার এক্সাম্পলের মতো) -->
+            <div class="swiper mySwiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery1.jpg" alt="Gallery Image 1">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery2.jpg" alt="Gallery Image 2">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery3.jpg" alt="Gallery Image 3">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery4.jpg" alt="Gallery Image 4">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery5.jpg" alt="Gallery Image 5">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery6.jpg" alt="Gallery Image 6">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery7.jpg" alt="Gallery Image 7">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery8.jpg" alt="Gallery Image 8">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery9.jpg" alt="Gallery Image 9">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul/Gallery10.jpg" alt="Gallery Image 10">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="goals" data-aos="fade-left">
+            <h2>Future Goals</h2>
+            <p>My primary goal is to build a life that is fulfilling—both personally and professionally—while staying true to the values of faith. I aspire to make my parents proud by achieving my dreams in ways that bring goodness to others and earn the pleasure of Allah. I believe that true success is not just measured by worldly achievements, but by continuous growth in character, knowledge, and contribution. With trust in Allah, I am committed to embracing every challenge and opportunity as part of the journey He has written for me.</p>
+            <blockquote data-aos="fade-up">
+                "Success isn't final, failure isn't fatal; it's the courage to keep going that matters."
+            </blockquote>
+        </section>
+        
+        <a href="TARIKUL.vcf" 
+           download="MD TARIKUL ISLAM.vcf" 
+           class="save-contact-btn" 
+           data-aos="fade-up">
+            <i class="fas fa-address-book"></i> Save Contact (VCF)
+        </a>
+        
+        <section class="contact" data-aos="fade-up">
+            <h2>Contact Me</h2>
+            <p>Want to connect, share ideas, or ask a question? Reach out through any of the channels below. I'm always excited to hear from my community!</p>
+            <div class="link-list">
+                <a href="tel:+8801719470590" class="link-btn" target="_blank" rel="noopener noreferrer"><i class="fas fa-phone"></i> Phone</a>
+                <button class="link-btn" onclick="openContactForm('sms')"><i class="fas fa-comment-alt"></i> Message</button>
+                <button class="link-btn" onclick="openContactForm('whatsapp')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                <button class="link-btn" onclick="openContactForm('email')"><i class="fas fa-envelope"></i> Gmail</button>
+            </div>
+            
+            <div id="contact-form-container" class="interactive-form-container">
+            </div>
+        </section>
+        
+        <footer>
+            © Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.
+        </footer>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    
+    <script>
+        // --- পরিবর্তন ১: স্ক্রল পজিশন রিসেট ফিক্স ---
+        if (history.scrollRestoration) {
+            history.scrollRestoration = 'manual';
+        }
+
+        // --- ধ্রুবক (Constants) সংজ্ঞায়িত করা ---
+        const body = document.body;
+        const themeIcon = document.getElementById('theme-icon');
+        const audio = document.getElementById('bgm');
+        const musicIcon = document.getElementById('music-icon');
+        const formContainer = document.getElementById('contact-form-container');
+        const themeDialog = document.getElementById('themeDialog');
+        const profileBubble = document.getElementById('profileBubble');
+        const MAX_SMS_LENGTH = 160;
+        
+        // --- ১. Profile Bubble Animation with GSAP (আপডেটেড) ---
+        function animateProfileBubble() {
+            // প্রথমে বাবলটি আনিমেশন দিয়ে দেখানো
+            gsap.fromTo(profileBubble, 
+                { 
+                    opacity: 0, 
+                    y: -10, 
+                    scale: 0.8 
+                },
+                { 
+                    opacity: 1, 
+                    y: 0, 
+                    scale: 1, 
+                    duration: 0.8, 
+                    ease: "back.out(1.7)",
+                    delay: 0.5,
+                    onComplete: function() {
+                        // এরপর ফ্লোটিং এনিমেশন শুরু করা
+                        profileBubble.classList.add('animated');
+                    }
+                }
+            );
+            
+            // থিংকিং ইফেক্ট - বাবলটি মাঝে মাঝে নড়বে
+            setInterval(() => {
+                gsap.to(profileBubble, {
+                    y: -3,
+                    duration: 0.6,
+                    repeat: 1,
+                    yoyo: true,
+                    ease: "power1.inOut"
+                });
+            }, 4000);
+        }
+        
+        // --- ২. Theme & Color Picker Functions ---
+        function toggleThemeDialog() {
+            if (themeDialog.style.display === 'block') {
+                themeDialog.style.display = 'none';
+            } else {
+                themeDialog.style.display = 'block';
+                // থিম আইকন এনিমেশন
+                gsap.to('.theme-btn-icon', {
+                    rotation: 360,
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+                
+                // বাইরে ক্লিক করলে ডায়ালগ বন্ধ হবে
+                setTimeout(() => {
+                    document.addEventListener('click', closeThemeDialogOnClickOutside);
+                }, 10);
+            }
+        }
+        
+        function closeThemeDialogOnClickOutside(event) {
+            if (!themeDialog.contains(event.target) && !event.target.closest('.theme-toggle')) {
+                themeDialog.style.display = 'none';
+                document.removeEventListener('click', closeThemeDialogOnClickOutside);
+            }
+        }
+        
+        // প্রাইমারি কালর পরিবর্তনের ফাংশন
+        function changePrimaryColor(color) {
+            // CSS ভেরিয়েবল আপডেট
+            document.documentElement.style.setProperty('--color-primary', color);
+            
+            // সিলেক্টেড কালর ইন্ডিকেট করা
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.getAttribute('data-color') === color) {
+                    option.classList.add('active');
+                }
+            });
+            
+            // LocalStorage এ সেভ করা
+            localStorage.setItem('primaryColor', color);
+            
+            // থিম ডায়ালগ বন্ধ করা
+            themeDialog.style.display = 'none';
+            
+            // কালর পরিবর্তনের এনিমেশন
+            gsap.fromTo('body', 
+                { '--color-primary': getComputedStyle(document.documentElement).getPropertyValue('--color-primary') },
+                { '--color-primary': color, duration: 0.5, ease: "power2.out" }
+            );
+        }
+        
+        // --- থিম লজিক ---
+        function updateThemeIcon() {
+            const themeBtn = document.querySelector('.theme-btn-icon');
+            if (body.classList.contains('dark-mode')) {
+                themeBtn.classList.remove('fa-moon');
+                themeBtn.classList.add('fa-sun');
+                gsap.to(themeBtn, {
+                    rotation: 180,
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+            } else {
+                themeBtn.classList.remove('fa-sun');
+                themeBtn.classList.add('fa-moon');
+                gsap.to(themeBtn, {
+                    rotation: 0,
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+            }
+        }
+
+        function setInitialTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            let theme;
+
+            if (savedTheme) {
+                theme = savedTheme;
+            } else {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-mode' : 'light-mode';
+            }
+
+            if (theme === 'dark-mode') {
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.add('light-mode');
+            }
+        }
+        
+        // প্রাইমারি কালর লোড করার ফাংশন
+        function loadPrimaryColor() {
+            const savedColor = localStorage.getItem('primaryColor');
+            if (savedColor) {
+                changePrimaryColor(savedColor);
+            }
+        }
+
+        // থিম টগল ফাংশন
+        function toggleTheme() {
+            body.classList.toggle('dark-mode');
+            body.classList.toggle('light-mode');
+            
+            const currentTheme = body.classList.contains('dark-mode') ? 'dark-mode' : 'light-mode';
+            localStorage.setItem('theme', currentTheme);
+            
+            updateThemeIcon();
+            themeDialog.style.display = 'none';
+        }
+        
+        // --- ৩. Swiper.js Gallery (আপডেটেড - আপনার এক্সাম্পল অনুযায়ী) ---
+        function initSwiper() {
+            new Swiper(".mySwiper", {
+                effect: "coverflow",
+                grabCursor: true,
+                centeredSlides: true,
+                slidesPerView: "auto",
+                loop: true,
+                autoplay: {
+                    delay: 2500,
+                    disableOnInteraction: false,
+                },
+                coverflowEffect: {
+                    rotate: 30,
+                    stretch: 0,
+                    depth: 100,
+                    modifier: 1,
+                    slideShadows: true
+                },
+                // নেভিগেশন বাটন লুকানো
+                navigation: false,
+                // পেজিনেশন লুকানো
+                pagination: false
+            });
+        }
+        
+        // --- ৪. Custom Interactive Cursor (শুধুমাত্র ডেস্কটপে) ---
+        function initCustomCursor() {
+            // শুধুমাত্র ডেস্কটপে কার্সর দেখাবে
+            if (window.innerWidth < 769) return;
+            
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            
+            let mouseX = 0, mouseY = 0;
+            let dotX = 0, dotY = 0;
+            let outlineX = 0, outlineY = 0;
+            
+            // Mouse move event listener
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+            
+            // Cursor animation loop
+            function animateCursor() {
+                // Dot cursor (fast)
+                dotX += (mouseX - dotX) * 0.5;
+                dotY += (mouseY - dotY) * 0.5;
+                cursorDot.style.left = `${dotX}px`;
+                cursorDot.style.top = `${dotY}px`;
+                
+                // Outline cursor (slower)
+                outlineX += (mouseX - outlineX) * 0.15;
+                outlineY += (mouseY - outlineY) * 0.15;
+                cursorOutline.style.left = `${outlineX}px`;
+                cursorOutline.style.top = `${outlineY}px`;
+                
+                requestAnimationFrame(animateCursor);
+            }
+            
+            // Start animation
+            animateCursor();
+            
+            // Hover effects
+            const interactiveElements = document.querySelectorAll('a, button, .link-btn, .save-contact-btn, .form-send-btn, .control-btn');
+            const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, blockquote, .tagline, span, li, .info-item');
+            
+            interactiveElements.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursorDot.classList.add('link-hover');
+                    cursorOutline.classList.add('link-hover');
+                });
+                el.addEventListener('mouseleave', () => {
+                    cursorDot.classList.remove('link-hover');
+                    cursorOutline.classList.remove('link-hover');
+                });
+            });
+            
+            textElements.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    cursorDot.classList.add('text-hover');
+                    cursorOutline.classList.add('text-hover');
+                });
+                el.addEventListener('mouseleave', () => {
+                    cursorDot.classList.remove('text-hover');
+                    cursorOutline.classList.remove('text-hover');
+                });
+            });
+            
+            // Hide cursor when leaving window
+            document.addEventListener('mouseleave', () => {
+                cursorDot.style.opacity = '0';
+                cursorOutline.style.opacity = '0';
+            });
+            
+            document.addEventListener('mouseenter', () => {
+                cursorDot.style.opacity = '1';
+                cursorOutline.style.opacity = '0.7';
+            });
+        }
+        
+        // --- অডিও কন্ট্রোল ---
+        function toggleMusic() {
+            if (audio.paused) {
+                audio.play().then(() => {
+                    musicIcon.classList.remove('fa-music');
+                    musicIcon.classList.add('fa-pause');
+                    // আইকন এনিমেশন
+                    gsap.to('#music-icon', {
+                        rotation: 360,
+                        duration: 0.5,
+                        ease: "power2.out"
+                    });
+                }).catch(error => {
+                    console.error("Audio playback failed:", error);
+                    musicIcon.classList.remove('fa-pause');
+                    musicIcon.classList.add('fa-music');
+                });
+            } else {
+                audio.pause();
+                musicIcon.classList.remove('fa-pause');
+                musicIcon.classList.add('fa-music');
+            }
+        }
+
+        // --- কন্টাক্ট ফর্ম লজিক ---
+        function openContactForm(type) {
+            formContainer.style.display = 'block';
+            formContainer.innerHTML = '';
+            let formHTML = '';
+            let submitAction = '';
+            let title = '';
+            if (type === 'sms') {
+                title = 'Send an SMS';
+                submitAction = `sendSMS()`;
+                formHTML = `
+                    <label for="sms-message">Message (Max ${MAX_SMS_LENGTH} characters):</label>
+                    <textarea id="sms-message" oninput="countChars(this, 'sms-char-count')" maxlength="${MAX_SMS_LENGTH}" placeholder="Type your short message..."></textarea>
+                    <span id="sms-char-count" class="char-count">${MAX_SMS_LENGTH} characters remaining</span>
+                    <button class="form-send-btn" onclick="${submitAction}">Send SMS</button>
+                `;
+            } else if (type === 'whatsapp') {
+                title = 'Send a WhatsApp Message';
+                submitAction = `sendWhatsApp()`;
+                formHTML = `
+                    <label for="whatsapp-message">Message:</label>
+                    <textarea id="whatsapp-message" placeholder="Type your WhatsApp message..."></textarea>
+                    <button class="form-send-btn" onclick="${submitAction}">Send via WhatsApp</button>
+                `;
+            } else if (type === 'email') {
+                title = 'Send a Gmail';
+                submitAction = `sendEmail()`;
+                formHTML = `
+                    <label for="email-subject">Subject:</label>
+                    <input type="text" id="email-subject" placeholder="Enter your subject line">
+                    <label for="email-body">Message:</label>
+                    <textarea id="email-body" placeholder="Write your full email message here..."></textarea>
+                    <button class="form-send-btn" onclick="${submitAction}">Send Gmail</button>
+                `;
+            }
+            formContainer.innerHTML = `<h3>${title}</h3><hr style="border-color: var(--color-primary); margin: 10px 0;">` + formHTML;
+            AOS.refresh();
+        }
+        
+        function countChars(textarea, countId) {
+            const currentLength = textarea.value.length;
+            const remaining = MAX_SMS_LENGTH - currentLength;
+            document.getElementById(countId).textContent = `${remaining} characters remaining`;
+        }
+        
+        function sendSMS() {
+            const message = document.getElementById('sms-message').value.trim();
+            if (message) {
+                window.location.href = `sms:+8801719470590?body=${encodeURIComponent(message)}`;
+            } else {
+                alert('Please enter a message to send.');
+            }
+        }
+        
+        function sendWhatsApp() {
+            const message = document.getElementById('whatsapp-message').value.trim();
+            if (message) {
+                window.open(`https://wa.me/+8801719470590?text=${encodeURIComponent(message)}`, '_blank');
+            } else {
+                alert('Please enter a message to send via WhatsApp.');
+            }
+        }
+        
+        function sendEmail() {
+            const subject = document.getElementById('email-subject').value.trim();
+            const bodyText = document.getElementById('email-body').value.trim();
+            const emailAddress = 'mdtorikulislam5748@gmail.com';
+            if (subject && bodyText) {
+                window.location.href = `mailto:${emailAddress}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+            } else {
+                alert('Please fill in both the Subject and Message fields for the email.');
+            }
+        }
+        
+// ১. টাইপিং মেসেজ লিস্ট
+const messages = ["Hello! 🤗", "হ্যালো! 🥰", "مرحباً! 🌙", "Welcome! ✨", "স্বাগতম! ❤️"];
+let messageIndex = 0;
+const bubbleElement = document.getElementById('profileBubble');
+
+// ২. টাইপিং ইফেক্ট ফাংশন (উন্নত রেসপনসিভ লজিক)
+async function typeEffect(text) {
+    // টাইপিং শুরু
+    for (let i = 0; i <= text.length; i++) {
+        // যদি i ০ হয়, তবে অদৃশ্য স্পেস দেখাবে যাতে বাবলটি লাফিয়ে ছোট না হয়
+        bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
+        await new Promise(res => setTimeout(res, 100));
+    }
+    
+    // লিখা শেষে বিরতি
+    await new Promise(res => setTimeout(res, 2000));
+    
+    // মোছার সময় (Backspacing)
+    for (let i = text.length; i >= 0; i--) {
+        bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
+        await new Promise(res => setTimeout(res, 50));
+    }
+}
+
+
+// ৩. মেইন লুপ ফাংশন
+async function startTypingLoop() {
+    // বাবলটি এনিমেশন দিয়ে শো করা
+    gsap.fromTo(bubbleElement, 
+        { opacity: 0, scale: 0.5, y: 10 }, // এখানে x সরানো হয়েছে
+        { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "back.out(1.7)" }
+    );
+    bubbleElement.classList.add('animated');
+
+    while (true) {
+        await typeEffect(messages[messageIndex]);
+        messageIndex = (messageIndex + 1) % messages.length;
+        await new Promise(res => setTimeout(res, 500));
+    }
+}
+
+// ৪. DOMContentLoaded (ইনিশিয়ালাইজেশন)
+document.addEventListener('DOMContentLoaded', () => {
+    // AOS
+    AOS.init({ duration: 800, once: true });
+
+    // থিম ও কালার
+    setInitialTheme();
+    updateThemeIcon();
+    loadPrimaryColor();
+    
+    // মিউজিক আইকন
+    if(musicIcon) {
+        musicIcon.classList.remove('fa-pause'); 
+        musicIcon.classList.add('fa-music');
+    }
+    
+    // শুধু এই ৩টি নতুন ফিচার চালু করো (animateProfileBubble বাদ দেওয়া হয়েছে)
+    initSwiper();
+    initCustomCursor();
+    startTypingLoop(); // এটিই টাইপিং এবং এনিমেশন দুটিই সামলাবে
+    
+    // রিসাইজ ইভেন্ট
+    window.addEventListener('resize', () => {
+        initCustomCursor();
+        document.querySelectorAll('.swiper').forEach(s => s.swiper && s.swiper.update());
+    });
+    
+    // Footer
+    document.querySelector('footer').innerHTML = `&copy; ${new Date().getFullYear()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
+});
+
+
+    </script>
+</body>
+</html>
