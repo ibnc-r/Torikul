@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+        // ইউআরএল চেক করে যদি ছোট হাতের 'torikul' থাকে, তবে বড় হাতের 'Torikul'-এ পাঠাবে
+        var currentUrl = window.location.href;
+        if (currentUrl.includes('/torikul/')) {
+            var newUrl = currentUrl.replace('/torikul/', '/Torikul/');
+            window.location.replace(newUrl);
+        } else {
+            // অন্য কোনো ৪MD এরর হলে হোমে পাঠিয়ে দেবে
+            window.location.replace("https://ibnc-r.github.io/Torikul/");
+        }
+    </script>
+</head>
+<body>
+    Redirecting...
+</body>
+</html>
