@@ -7,6 +7,11 @@
     <meta name="keywords" content="A Student, social worker, Helpfulness, Bangladeshi.">
     <meta name="author" content="MD TARIKUL ISLAM">
     <title>TARIKUL ISLAM | Student Nurse</title>
+    
+    <!-- Favicon - dynamically set from profile image -->
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;,">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     
     <!-- নতুন লাইব্রেরি লিঙ্ক -->
@@ -277,106 +282,6 @@ body.dark-mode .profile-bubble {
             backdrop-filter: blur(10px); 
             -webkit-backdrop-filter: blur(10px);
             position: relative; /* Bubble এর জন্য প্রয়োজন */
-        }
-        
-        /* ========== প্রোফাইল ইমেজের জন্য অ্যানিমেটেড গ্লো ========== */
-        .profile-img-container {
-            position: relative;
-            width: fit-content;
-            margin: 0 auto 20px auto;
-            display: inline-block;
-        }
-        
-        .profile-img {
-            width: 150px;
-            height: 150px;
-            position: relative;
-            border-radius: 50%;
-            border: 3px solid var(--color-primary);
-            object-fit: cover;
-            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
-            margin-bottom: 0; /* margin-bottom সরিয়ে কন্টেইনার handle করবে */
-            transform: scale(0); 
-            opacity: 0;
-            z-index: 2;
-            position: relative;
-        }
-        
-        /* প্রোফাইল ইমেজের চারপাশে গ্লো ইফেক্ট */
-        .profile-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: calc(100% + 20px);
-            height: calc(100% + 20px);
-            border-radius: 50%;
-            background: radial-gradient(circle, 
-                rgba(46, 204, 113, 0.8) 0%, 
-                rgba(46, 204, 113, 0.4) 40%,
-                rgba(46, 204, 113, 0) 70%);
-            filter: blur(15px);
-            z-index: 1;
-            animation: profileGlowPulse 3s ease-in-out infinite;
-            pointer-events: none;
-        }
-        
-        /* ডার্ক মোডে আরও উজ্জ্বল গ্লো */
-        body.dark-mode .profile-glow {
-            background: radial-gradient(circle, 
-                rgba(46, 204, 113, 0.9) 0%, 
-                rgba(46, 204, 113, 0.5) 40%,
-                rgba(46, 204, 113, 0.1) 70%);
-            filter: blur(20px);
-        }
-        
-        /* লাইট মোডেও একটি হালকা গ্লো (ঐচ্ছিক) */
-        body.light-mode .profile-glow {
-            background: radial-gradient(circle, 
-                rgba(46, 204, 113, 0.6) 0%, 
-                rgba(46, 204, 113, 0.3) 40%,
-                rgba(46, 204, 113, 0) 70%);
-            filter: blur(15px);
-        }
-        
-        /* প্রাইমারি কালর পরিবর্তনের সাথে গ্লোর রঙ adjust করার জন্য */
-        .profile-glow {
-            background: radial-gradient(circle, 
-                color-mix(in srgb, var(--color-primary) 80%, transparent) 0%, 
-                color-mix(in srgb, var(--color-primary) 40%, transparent) 40%,
-                transparent 70%);
-        }
-        
-        /* গ্লো অ্যানিমেশন */
-        @keyframes profileGlowPulse {
-            0%, 100% {
-                opacity: 0.7;
-                transform: translate(-50%, -50%) scale(1);
-                filter: blur(15px);
-            }
-            50% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.2);
-                filter: blur(25px);
-            }
-        }
-        
-        /* ডার্ক মোডে অ্যানিমেশন আরও প্রখর */
-        body.dark-mode .profile-glow {
-            animation: profileGlowPulseDark 3s ease-in-out infinite;
-        }
-        
-        @keyframes profileGlowPulseDark {
-            0%, 100% {
-                opacity: 0.8;
-                transform: translate(-50%, -50%) scale(1);
-                filter: blur(15px);
-            }
-            50% {
-                opacity: 1.2;
-                transform: translate(-50%, -50%) scale(1.3);
-                filter: blur(30px);
-            }
         }
         
         /* ========== ২. Theme & Color Picker (আপডেটেড) ========== */
@@ -670,6 +575,20 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         body.light-mode .profile-card {
             background: rgba(255,255,255,0.7);
             border: 1px solid var(--glass-dark-border);
+        }
+        
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            border-radius: 50%;
+            border: 3px solid var(--color-primary);
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+            margin-bottom: 20px;
+            /* Entrance Animation এর জন্য ইনিশিয়াল স্টেট */
+            transform: scale(0); 
+            opacity: 0;
         }
         
         h1 {
@@ -1096,12 +1015,8 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         <header class="profile-card" data-aos="fade-down">
             <!-- Profile Bubble Message (আপডেটেড) -->
             <div class="profile-bubble" id="profileBubble"></div>            
-            
-            <!-- প্রোফাইল ইমেজের জন্য কন্টেইনার যাতে গ্লো ইফেক্ট যুক্ত করা যায় -->
-            <div class="profile-img-container">
-                <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img">
-                <div class="profile-glow"></div>
-            </div>
+
+            <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img" id="profileImage">
             
             <h1>TARIKUL <span>ISLAM</span></h1>
             <p class="tagline">A Student Nurse of ISLAMI BANK NURSING COLLEGE, RAJSHAHI.</p>
@@ -1231,8 +1146,60 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         const formContainer = document.getElementById('contact-form-container');
         const themeDialog = document.getElementById('themeDialog');
         const profileBubble = document.getElementById('profileBubble');
-        const profileImg = document.querySelector('.profile-img'); // প্রোফাইল ইমেজ সিলেক্ট করা হলো
+        const profileImg = document.getElementById('profileImage');
         const MAX_SMS_LENGTH = 160;
+        
+        // --- Favicon সেট করার ফাংশন (প্রোফাইল ইমেজ থেকে এবং গোলাকার) ---
+        function setFaviconFromImage() {
+            if (!profileImg || !profileImg.src) return;
+            
+            // ক্যানভাস তৈরি করে ছবি রিসাইজ করা
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            
+            // বৃত্তাকার পাথ তৈরি করা
+            ctx.beginPath();
+            ctx.arc(16, 16, 16, 0, Math.PI * 2); // (centerX, centerY, radius, startAngle, endAngle)
+            ctx.closePath();
+            ctx.clip(); // ক্লিপিং প্রয়োগ করা - এর পর যা আঁকা হবে তা শুধু বৃত্তের ভিতরে দেখাবে
+            
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // CORS ইস্যু এড়াতে
+            img.src = profileImg.src;
+            
+            img.onload = function() {
+                // ছবি ড্র করে Favicon সাইজে (এবার এটি বৃত্তের ভিতরেই আঁকা হবে)
+                ctx.drawImage(img, 0, 0, 32, 32);
+                
+                // ঐচ্ছিক: বৃত্তের চারপাশে একটি হালকা বর্ডার যোগ করা (যদি ইচ্ছে করে)
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.arc(16, 16, 15.5, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Favicon লিঙ্ক খুঁজে বা তৈরি করে সেট করা
+                let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+                link.type = 'image/x-icon';
+                link.rel = 'shortcut icon';
+                link.href = canvas.toDataURL('image/x-icon');
+                document.getElementsByTagName('head')[0].appendChild(link);
+                
+                console.log('Circular favicon set successfully from profile image');
+            };
+            
+            img.onerror = function() {
+                console.log('Could not load image for favicon');
+                // ব্যর্থ হলে ডিফল্ট favicon
+                let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+                link.type = 'image/x-icon';
+                link.rel = 'shortcut icon';
+                link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx="50" cy="50" r="50" fill="%2327ae60"/><text x="50" y="70" font-size="70" text-anchor="middle" fill="white">T</text></svg>';
+                document.getElementsByTagName('head')[0].appendChild(link);
+            };
+        }
         
         // --- ১. Profile Picture Entrance Animation (Zoom Out) ---
         function animateProfileEntrance() {
@@ -1646,11 +1613,10 @@ body.dark-mode .theme-toggle-btn .moon-icon {
 
         // ৯. DOMContentLoaded (ইনিশিয়ালাইজেশন)
         document.addEventListener('DOMContentLoaded', () => {
-            // AOS - স্ক্রল ইফেক্ট এখন উভয় দিকে কাজ করবে (শুধু once: false, mirror সরানো হয়েছে)
+            // AOS - স্ক্রল ইফেক্ট বারবার দেখাবে (mirror false রাখা হয়েছে)
             AOS.init({ 
                 duration: 800, 
-                once: false       // এলিমেন্ট বারবার দেখাবে (শুধু নিচের দিকে)
-                // mirror: true সরানো হয়েছে
+                once: false,      // এলিমেন্ট বারবার দেখাবে (স্ক্রল উপরে উঠলে লুকাবে না)
             });
 
             // থিম ও কালার
@@ -1667,7 +1633,10 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             // Entrance Animation: প্রোফাইল পিকচার জুম আউট এনিমেশন চালু
             animateProfileEntrance();
             
-            // শুধু এই ৩টি নতুন ফিচার চালু করো (animateProfileBubble বাদ দেওয়া হয়েছে)
+            // Favicon সেট করা (প্রোফাইল ইমেজ থেকে - গোলাকার)
+            setFaviconFromImage();
+            
+            // অন্যান্য ফিচার চালু করা
             initSwiper();
             initCustomCursor();
             startTypingLoop(); // এটিই টাইপিং এবং এনিমেশন দুটিই সামলাবে
@@ -1679,7 +1648,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             });
             
             // Footer
-            document.querySelector('footer').innerHTML = `&copy; ${new Date().getTime()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
+            document.querySelector('footer').innerHTML = `&copy; ${new Date().getFullYear()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
         });
 
     </script>
