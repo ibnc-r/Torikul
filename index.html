@@ -279,6 +279,106 @@ body.dark-mode .profile-bubble {
             position: relative; /* Bubble এর জন্য প্রয়োজন */
         }
         
+        /* ========== প্রোফাইল ইমেজের জন্য অ্যানিমেটেড গ্লো ========== */
+        .profile-img-container {
+            position: relative;
+            width: fit-content;
+            margin: 0 auto 20px auto;
+            display: inline-block;
+        }
+        
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            border-radius: 50%;
+            border: 3px solid var(--color-primary);
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+            margin-bottom: 0; /* margin-bottom সরিয়ে কন্টেইনার handle করবে */
+            transform: scale(0); 
+            opacity: 0;
+            z-index: 2;
+            position: relative;
+        }
+        
+        /* প্রোফাইল ইমেজের চারপাশে গ্লো ইফেক্ট */
+        .profile-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% + 20px);
+            height: calc(100% + 20px);
+            border-radius: 50%;
+            background: radial-gradient(circle, 
+                rgba(46, 204, 113, 0.8) 0%, 
+                rgba(46, 204, 113, 0.4) 40%,
+                rgba(46, 204, 113, 0) 70%);
+            filter: blur(15px);
+            z-index: 1;
+            animation: profileGlowPulse 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        /* ডার্ক মোডে আরও উজ্জ্বল গ্লো */
+        body.dark-mode .profile-glow {
+            background: radial-gradient(circle, 
+                rgba(46, 204, 113, 0.9) 0%, 
+                rgba(46, 204, 113, 0.5) 40%,
+                rgba(46, 204, 113, 0.1) 70%);
+            filter: blur(20px);
+        }
+        
+        /* লাইট মোডেও একটি হালকা গ্লো (ঐচ্ছিক) */
+        body.light-mode .profile-glow {
+            background: radial-gradient(circle, 
+                rgba(46, 204, 113, 0.6) 0%, 
+                rgba(46, 204, 113, 0.3) 40%,
+                rgba(46, 204, 113, 0) 70%);
+            filter: blur(15px);
+        }
+        
+        /* প্রাইমারি কালর পরিবর্তনের সাথে গ্লোর রঙ adjust করার জন্য */
+        .profile-glow {
+            background: radial-gradient(circle, 
+                color-mix(in srgb, var(--color-primary) 80%, transparent) 0%, 
+                color-mix(in srgb, var(--color-primary) 40%, transparent) 40%,
+                transparent 70%);
+        }
+        
+        /* গ্লো অ্যানিমেশন */
+        @keyframes profileGlowPulse {
+            0%, 100% {
+                opacity: 0.7;
+                transform: translate(-50%, -50%) scale(1);
+                filter: blur(15px);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+                filter: blur(25px);
+            }
+        }
+        
+        /* ডার্ক মোডে অ্যানিমেশন আরও প্রখর */
+        body.dark-mode .profile-glow {
+            animation: profileGlowPulseDark 3s ease-in-out infinite;
+        }
+        
+        @keyframes profileGlowPulseDark {
+            0%, 100% {
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1);
+                filter: blur(15px);
+            }
+            50% {
+                opacity: 1.2;
+                transform: translate(-50%, -50%) scale(1.3);
+                filter: blur(30px);
+            }
+        }
+        
         /* ========== ২. Theme & Color Picker (আপডেটেড) ========== */
         .theme-dialog {
             display: none;
@@ -570,17 +670,6 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         body.light-mode .profile-card {
             background: rgba(255,255,255,0.7);
             border: 1px solid var(--glass-dark-border);
-        }
-        
-        .profile-img {
-            width: 150px;
-            height: 150px;
-            position: relative;
-            border-radius: 50%;
-            border: 3px solid var(--color-primary);
-            object-fit: cover;
-            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
-            margin-bottom: 20px;
         }
         
         h1 {
@@ -1007,8 +1096,12 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         <header class="profile-card" data-aos="fade-down">
             <!-- Profile Bubble Message (আপডেটেড) -->
             <div class="profile-bubble" id="profileBubble"></div>            
-
-            <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img">
+            
+            <!-- প্রোফাইল ইমেজের জন্য কন্টেইনার যাতে গ্লো ইফেক্ট যুক্ত করা যায় -->
+            <div class="profile-img-container">
+                <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img">
+                <div class="profile-glow"></div>
+            </div>
             
             <h1>TARIKUL <span>ISLAM</span></h1>
             <p class="tagline">A Student Nurse of ISLAMI BANK NURSING COLLEGE, RAJSHAHI.</p>
@@ -1138,9 +1231,33 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         const formContainer = document.getElementById('contact-form-container');
         const themeDialog = document.getElementById('themeDialog');
         const profileBubble = document.getElementById('profileBubble');
+        const profileImg = document.querySelector('.profile-img'); // প্রোফাইল ইমেজ সিলেক্ট করা হলো
         const MAX_SMS_LENGTH = 160;
         
-        // --- ১. Profile Bubble Animation with GSAP (আপডেটেড) ---
+        // --- ১. Profile Picture Entrance Animation (Zoom Out) ---
+        function animateProfileEntrance() {
+            // একটি টাইমলাইন তৈরি করি
+            const tl = gsap.timeline();
+            
+            // ছবিটি প্রথমে দেখা যাচ্ছে না (CSS এ scale:0 এবং opacity:0 দেওয়া আছে)
+            // এখন আমরা একে খুব বড় (scale:5) করে দেখাব এবং opacity বাড়াব, তারপর zoom out করে normal করব।
+            tl.to(profileImg, {
+                scale: 5,          // খুব জুম ইন
+                opacity: 1,
+                duration: 0.1,      // খুব দ্রুত বড় করে ফেলা
+                ease: "power1.in"
+            })
+            .to(profileImg, {
+                scale: 1,           // নিজের সাইজে ফিরে আসা (zoom out)
+                duration: 1.2,
+                ease: "elastic.out(1, 0.5)", // একটি সুন্দর স্মুথ ইলাস্টিক ইফেক্ট
+                onComplete: () => {
+                    console.log("Entrance animation complete");
+                }
+            });
+        }
+
+        // --- ২. Profile Bubble Animation with GSAP (আপডেটেড) ---
         function animateProfileBubble() {
             // প্রথমে বাবলটি আনিমেশন দিয়ে দেখানো
             gsap.fromTo(profileBubble, 
@@ -1175,7 +1292,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             }, 4000);
         }
         
-        // --- ২. Theme & Color Picker Functions ---
+        // --- ৩. Theme & Color Picker Functions ---
         function toggleThemeDialog() {
             if (themeDialog.style.display === 'block') {
                 themeDialog.style.display = 'none';
@@ -1287,7 +1404,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             themeDialog.style.display = 'none';
         }
         
-        // --- ৩. Swiper.js Gallery (আপডেটেড - আপনার এক্সাম্পল অনুযায়ী) ---
+        // --- ৪. Swiper.js Gallery (আপডেটেড - আপনার এক্সাম্পল অনুযায়ী) ---
         function initSwiper() {
             new Swiper(".mySwiper", {
                 effect: "coverflow",
@@ -1313,7 +1430,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             });
         }
         
-        // --- ৪. Custom Interactive Cursor (শুধুমাত্র ডেস্কটপে) ---
+        // --- ৫. Custom Interactive Cursor (শুধুমাত্র ডেস্কটপে) ---
         function initCustomCursor() {
             // শুধুমাত্র ডেস্কটপে কার্সর দেখাবে
             if (window.innerWidth < 769) return;
@@ -1487,78 +1604,83 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             }
         }
         
-// ১. টাইপিং মেসেজ লিস্ট
-const messages = ["Hello! 🤗", "হ্যালো! 🥰", "مرحباً! 🌙", "Welcome! ✨", "স্বাগতম! ❤️"];
-let messageIndex = 0;
-const bubbleElement = document.getElementById('profileBubble');
+        // ৬. টাইপিং মেসেজ লিস্ট
+        const messages = ["Hello! 🤗", "হ্যালো! 🥰", "مرحباً! 🌙", "Welcome! ✨", "স্বাগতম! ❤️"];
+        let messageIndex = 0;
+        const bubbleElement = document.getElementById('profileBubble');
 
-// ২. টাইপিং ইফেক্ট ফাংশন (উন্নত রেসপনসিভ লজিক)
-async function typeEffect(text) {
-    // টাইপিং শুরু
-    for (let i = 0; i <= text.length; i++) {
-        // যদি i ০ হয়, তবে অদৃশ্য স্পেস দেখাবে যাতে বাবলটি লাফিয়ে ছোট না হয়
-        bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
-        await new Promise(res => setTimeout(res, 100));
-    }
-    
-    // লিখা শেষে বিরতি
-    await new Promise(res => setTimeout(res, 2000));
-    
-    // মোছার সময় (Backspacing)
-    for (let i = text.length; i >= 0; i--) {
-        bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
-        await new Promise(res => setTimeout(res, 50));
-    }
-}
+        // ৭. টাইপিং ইফেক্ট ফাংশন (উন্নত রেসপনসিভ লজিক)
+        async function typeEffect(text) {
+            // টাইপিং শুরু
+            for (let i = 0; i <= text.length; i++) {
+                // যদি i ০ হয়, তবে অদৃশ্য স্পেস দেখাবে যাতে বাবলটি লাফিয়ে ছোট না হয়
+                bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
+                await new Promise(res => setTimeout(res, 100));
+            }
+            
+            // লিখা শেষে বিরতি
+            await new Promise(res => setTimeout(res, 2000));
+            
+            // মোছার সময় (Backspacing)
+            for (let i = text.length; i >= 0; i--) {
+                bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
+                await new Promise(res => setTimeout(res, 50));
+            }
+        }
 
+        // ৮. মেইন লুপ ফাংশন
+        async function startTypingLoop() {
+            // বাবলটি এনিমেশন দিয়ে শো করা
+            gsap.fromTo(bubbleElement, 
+                { opacity: 0, scale: 0.5, y: 10 }, // এখানে x সরানো হয়েছে
+                { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "back.out(1.7)" }
+            );
+            bubbleElement.classList.add('animated');
 
-// ৩. মেইন লুপ ফাংশন
-async function startTypingLoop() {
-    // বাবলটি এনিমেশন দিয়ে শো করা
-    gsap.fromTo(bubbleElement, 
-        { opacity: 0, scale: 0.5, y: 10 }, // এখানে x সরানো হয়েছে
-        { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "back.out(1.7)" }
-    );
-    bubbleElement.classList.add('animated');
+            while (true) {
+                await typeEffect(messages[messageIndex]);
+                messageIndex = (messageIndex + 1) % messages.length;
+                await new Promise(res => setTimeout(res, 500));
+            }
+        }
 
-    while (true) {
-        await typeEffect(messages[messageIndex]);
-        messageIndex = (messageIndex + 1) % messages.length;
-        await new Promise(res => setTimeout(res, 500));
-    }
-}
+        // ৯. DOMContentLoaded (ইনিশিয়ালাইজেশন)
+        document.addEventListener('DOMContentLoaded', () => {
+            // AOS - স্ক্রল ইফেক্ট এখন উভয় দিকে কাজ করবে (শুধু once: false, mirror সরানো হয়েছে)
+            AOS.init({ 
+                duration: 800, 
+                once: false       // এলিমেন্ট বারবার দেখাবে (শুধু নিচের দিকে)
+                // mirror: true সরানো হয়েছে
+            });
 
-// ৪. DOMContentLoaded (ইনিশিয়ালাইজেশন)
-document.addEventListener('DOMContentLoaded', () => {
-    // AOS
-    AOS.init({ duration: 800, once: true });
-
-    // থিম ও কালার
-    setInitialTheme();
-    updateThemeIcon();
-    loadPrimaryColor();
-    
-    // মিউজিক আইকন
-    if(musicIcon) {
-        musicIcon.classList.remove('fa-pause'); 
-        musicIcon.classList.add('fa-music');
-    }
-    
-    // শুধু এই ৩টি নতুন ফিচার চালু করো (animateProfileBubble বাদ দেওয়া হয়েছে)
-    initSwiper();
-    initCustomCursor();
-    startTypingLoop(); // এটিই টাইপিং এবং এনিমেশন দুটিই সামলাবে
-    
-    // রিসাইজ ইভেন্ট
-    window.addEventListener('resize', () => {
-        initCustomCursor();
-        document.querySelectorAll('.swiper').forEach(s => s.swiper && s.swiper.update());
-    });
-    
-    // Footer
-    document.querySelector('footer').innerHTML = `&copy; ${new Date().getFullYear()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
-});
-
+            // থিম ও কালার
+            setInitialTheme();
+            updateThemeIcon();
+            loadPrimaryColor();
+            
+            // মিউজিক আইকন
+            if(musicIcon) {
+                musicIcon.classList.remove('fa-pause'); 
+                musicIcon.classList.add('fa-music');
+            }
+            
+            // Entrance Animation: প্রোফাইল পিকচার জুম আউট এনিমেশন চালু
+            animateProfileEntrance();
+            
+            // শুধু এই ৩টি নতুন ফিচার চালু করো (animateProfileBubble বাদ দেওয়া হয়েছে)
+            initSwiper();
+            initCustomCursor();
+            startTypingLoop(); // এটিই টাইপিং এবং এনিমেশন দুটিই সামলাবে
+            
+            // রিসাইজ ইভেন্ট
+            window.addEventListener('resize', () => {
+                initCustomCursor();
+                document.querySelectorAll('.swiper').forEach(s => s.swiper && s.swiper.update());
+            });
+            
+            // Footer
+            document.querySelector('footer').innerHTML = `&copy; ${new Date().getTime()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
+        });
 
     </script>
 </body>
