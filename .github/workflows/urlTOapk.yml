@@ -63,7 +63,7 @@ jobs:
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
-          # Error Page Download
+          # নতুন লাইটওয়েট এরর পেজ ডাউনলোড
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
@@ -72,10 +72,13 @@ jobs:
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity - জাভা কম্পাইল এরর মুক্ত লজিক
+          # MainActivity - ল্যাগ এবং ক্র্যাশ ফ্রি প্রো কোড
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
+          import android.content.Context;
+          import android.net.ConnectivityManager;
+          import android.net.NetworkInfo;
           import android.os.Bundle;
           import android.view.View;
           import android.view.ViewGroup;
@@ -90,6 +93,32 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
+              private String mainUrl;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  mainUrl = "${{ steps.meta.outputs.url }}";
+                  
+                  // ১. চেক করবে শুরুতে নেট আছে কিনা
+                  if (!isNetworkAvailable()) {
+                      hideSplash(); // নেট না থাকলে লোগো সরাও
+                  }
+              }
+
+              private boolean isNetworkAvailable() {
+                  ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                  NetworkInfo netInfo = cm.getActiveNetworkInfo();
+                  return netInfo != null && netInfo.isConnected();
+              }
+
+              private void hideSplash() {
+                  getBridge().executeOnMainThread(() -> {
+                      if (getBridge().getPlugin("SplashScreen") != null) {
+                          getBridge().getPlugin("SplashScreen").getInstance().hide(null);
+                      }
+                  });
+              }
 
               @Override
               public void onStart() {
@@ -128,18 +157,22 @@ jobs:
                               super.onPageFinished(view, url);
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
-                              
-                              // Java-তে প্লাগইন কল না করে সরাসরি JS ইনজেকশন (এরর মুক্ত)
-                              view.evaluateJavascript("if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) { window.Capacitor.Plugins.SplashScreen.hide(); }", null);
+                              hideSplash();
                           }
 
                           @Override
                           public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                               if (request.isForMainFrame()) {
                                   view.loadUrl("file:///android_asset/public/error.html");
+                                  hideSplash();
                               }
                           }
                       });
+                      
+                      // ২. শুরুতে নেট না থাকলে সাথে সাথে এরর পেজ লোড করো
+                      if (!isNetworkAvailable()) {
+                          webView.loadUrl("file:///android_asset/public/error.html");
+                      }
                   }
               }
 
@@ -147,7 +180,7 @@ jobs:
               public void onBackPressed() {
                   WebView webView = getBridge().getWebView();
                   if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
-                      webView.loadUrl("${{ steps.meta.outputs.url }}");
+                      webView.loadUrl(mainUrl);
                   } else if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
