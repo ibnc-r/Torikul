@@ -1,4 +1,4 @@
-name: Ultimate URL to APK Converter
+name: Professional URL to APK (Swipe Refresh Enabled)
 
 on:
   push:
@@ -21,16 +21,11 @@ jobs:
       - name: Extract Metadata
         id: meta
         run: |
-          APP_NAME=$(jq -r '.appName' assets/url-metadata.json)
-          APP_PKG=$(jq -r '.appPackage' assets/url-metadata.json)
-          APP_URL=$(jq -r '.appUrl' assets/url-metadata.json)
-          APP_VER=$(jq -r '.versionName' assets/url-metadata.json)
-          APP_CODE=$(jq -r '.versionCode' assets/url-metadata.json)
-          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
-          echo "package=$APP_PKG" >> $GITHUB_OUTPUT
-          echo "url=$APP_URL" >> $GITHUB_OUTPUT
-          echo "version=$APP_VER" >> $GITHUB_OUTPUT
-          echo "code=$APP_CODE" >> $GITHUB_OUTPUT
+          echo "name=$(jq -r '.appName' assets/url-metadata.json)" >> $GITHUB_OUTPUT
+          echo "package=$(jq -r '.appPackage' assets/url-metadata.json)" >> $GITHUB_OUTPUT
+          echo "url=$(jq -r '.appUrl' assets/url-metadata.json)" >> $GITHUB_OUTPUT
+          echo "version=$(jq -r '.versionName' assets/url-metadata.json)" >> $GITHUB_OUTPUT
+          echo "code=$(jq -r '.versionCode' assets/url-metadata.json)" >> $GITHUB_OUTPUT
 
       - name: Setup Java 21
         uses: actions/setup-java@v4
@@ -38,65 +33,74 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Initialize Capacitor
+      - name: Initialize Project
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
-          mkdir -p dist && echo "<html></html>" > dist/index.html
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          mkdir -p dist && echo "<html><body>Redirecting...</body></html>" > dist/index.html
+          
+          npx cap init "${{ steps.meta.outputs.name }}" "${{ steps.meta.outputs.package }}" --web-dir dist
+          npx cap add android
+
+          # Capacitor config আপডেট (Server URL সেট করা)
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
+            "server": {
+              "url": "${{ steps.meta.outputs.url }}",
+              "cleartext": true
+            }
           }
           EOF
-          npx cap add android
+          npx cap copy android
 
-      - name: Inject SwipeRefresh & Professional Logic
+      - name: Inject Professional Features
         run: |
           # ১. SwipeRefreshLayout ডিপেন্ডেন্সি যোগ করা
           sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
 
-          # ২. MainActivity.java - সম্পূর্ণ প্রফেশনাল লজিক ইনজেকশন
-          PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
-          FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
-          
-          cat <<EOF > "$FILE_PATH"
+          # ২. Layout ফাইল ওভাররাইট (SwipeRefresh + WebView)
+          cat <<EOF > android/app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/swipe_container"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+              <WebView
+                  android:id="@+id/webview"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" />
+          </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+          EOF
+
+          # ৩. MainActivity.java ওভাররাইট (পুরো কোডটি প্রফেশনাল ভাবে লেখা)
+          PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
+          cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
           import android.webkit.WebView;
-          import android.view.ViewGroup;
-          import android.widget.FrameLayout;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.BridgeWebViewClient;
 
           public class MainActivity extends BridgeActivity {
-              private SwipeRefreshLayout swipeRefreshLayout;
-
               @Override
-              protected void onCreate(Bundle savedInstanceState) {
+              public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
               }
 
               @Override
-              public void onResume() {
-                  super.onResume();
-                  final WebView webView = this.bridge.getWebView();
-                  
-                  if (webView != null && swipeRefreshLayout == null) {
-                      ViewGroup parent = (ViewGroup) webView.getParent();
-                      swipeRefreshLayout = new SwipeRefreshLayout(this);
+              public void onStart() {
+                  super.onStart();
+                  final SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipe_container);
+                  final WebView webView = getBridge().getWebView();
+
+                  if (swipeRefreshLayout != null && webView != null) {
+                      swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
                       
-                      // WebView কে SwipeRefreshLayout এর ভেতরে ঢুকিয়ে দেওয়া
-                      parent.removeView(webView);
-                      swipeRefreshLayout.addView(webView);
-                      parent.addView(swipeRefreshLayout);
-
-                      swipeRefreshLayout.setOnRefreshListener(() -> {
-                          webView.reload();
-                      });
-
-                      webView.setWebViewClient(new com.getcapacitor.BridgeWebViewClient(this.bridge) {
+                      webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
                           public void onPageFinished(WebView view, String url) {
                               super.onPageFinished(view, url);
@@ -108,8 +112,8 @@ jobs:
 
               @Override
               public void onBackPressed() {
-                  if (this.bridge.getWebView().canGoBack()) {
-                      this.bridge.getWebView().goBack();
+                  if (getBridge().getWebView().canGoBack()) {
+                      getBridge().getWebView().goBack();
                   } else {
                       super.onBackPressed();
                   }
@@ -117,160 +121,14 @@ jobs:
           }
           EOF
 
-          # ৩. আইকন জেনারেশন
-          if [ -f "assets/icon.png" ]; then 
-            npx capacitor-assets generate --android
-          fi
-
-          # ৪. ভার্সন কোড ও নাম আপডেট
+          # ৪. ভার্সন কোড ও নাম সিঙ্ক
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-          
-          npx cap sync android
 
       - name: Build APK
         run: |
-          cd android && chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-name: Ultimate URL to APK Converter
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Extract Metadata
-        id: meta
-        run: |
-          APP_NAME=$(jq -r '.appName' assets/url-metadata.json)
-          APP_PKG=$(jq -r '.appPackage' assets/url-metadata.json)
-          APP_URL=$(jq -r '.appUrl' assets/url-metadata.json)
-          APP_VER=$(jq -r '.versionName' assets/url-metadata.json)
-          APP_CODE=$(jq -r '.versionCode' assets/url-metadata.json)
-          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
-          echo "package=$APP_PKG" >> $GITHUB_OUTPUT
-          echo "url=$APP_URL" >> $GITHUB_OUTPUT
-          echo "version=$APP_VER" >> $GITHUB_OUTPUT
-          echo "code=$APP_CODE" >> $GITHUB_OUTPUT
-
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-
-      - name: Initialize Capacitor
-        run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
-          mkdir -p dist && echo "<html></html>" > dist/index.html
-          cat <<EOF > capacitor.config.json
-          {
-            "appId": "${{ steps.meta.outputs.package }}",
-            "appName": "${{ steps.meta.outputs.name }}",
-            "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
-          }
-          EOF
-          npx cap add android
-
-      - name: Inject SwipeRefresh & Professional Logic
-        run: |
-          # ১. SwipeRefreshLayout ডিপেন্ডেন্সি যোগ করা
-          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
-
-          # ২. MainActivity.java - সম্পূর্ণ প্রফেশনাল লজিক ইনজেকশন
-          PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
-          FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
-          
-          cat <<EOF > "$FILE_PATH"
-          package ${{ steps.meta.outputs.package }};
-          import android.os.Bundle;
-          import android.webkit.WebView;
-          import android.view.ViewGroup;
-          import android.widget.FrameLayout;
-          import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-          import com.getcapacitor.BridgeActivity;
-
-          public class MainActivity extends BridgeActivity {
-              private SwipeRefreshLayout swipeRefreshLayout;
-
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-              }
-
-              @Override
-              public void onResume() {
-                  super.onResume();
-                  final WebView webView = this.bridge.getWebView();
-                  
-                  if (webView != null && swipeRefreshLayout == null) {
-                      ViewGroup parent = (ViewGroup) webView.getParent();
-                      swipeRefreshLayout = new SwipeRefreshLayout(this);
-                      
-                      // WebView কে SwipeRefreshLayout এর ভেতরে ঢুকিয়ে দেওয়া
-                      parent.removeView(webView);
-                      swipeRefreshLayout.addView(webView);
-                      parent.addView(swipeRefreshLayout);
-
-                      swipeRefreshLayout.setOnRefreshListener(() -> {
-                          webView.reload();
-                      });
-
-                      webView.setWebViewClient(new com.getcapacitor.BridgeWebViewClient(this.bridge) {
-                          @Override
-                          public void onPageFinished(WebView view, String url) {
-                              super.onPageFinished(view, url);
-                              swipeRefreshLayout.setRefreshing(false);
-                          }
-                      });
-                  }
-              }
-
-              @Override
-              public void onBackPressed() {
-                  if (this.bridge.getWebView().canGoBack()) {
-                      this.bridge.getWebView().goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
-              }
-          }
-          EOF
-
-          # ৩. আইকন জেনারেশন
-          if [ -f "assets/icon.png" ]; then 
-            npx capacitor-assets generate --android
-          fi
-
-          # ৪. ভার্সন কোড ও নাম আপডেট
-          sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-          
-          npx cap sync android
-
-      - name: Build APK
-        run: |
-          cd android && chmod +x gradlew
+          cd android
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
