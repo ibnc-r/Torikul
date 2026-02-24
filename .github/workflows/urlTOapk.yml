@@ -66,10 +66,21 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
-      - name: Professional Optimization
+      - name: Fix Duplicates & Professional Optimization
         run: |
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
+          # ডুপ্লিকেট ক্লাস এরর চিরতরে বন্ধ করার জন্য
+          cat <<EOF >> android/app/build.gradle
+          configurations.all {
+              resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                  if (details.requested.group == 'org.jetbrains.kotlin') {
+                      details.useVersion "1.8.22"
+                  }
+              }
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+          }
+          EOF
+
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")' android/app/build.gradle
           
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
@@ -94,13 +105,10 @@ jobs:
           public class MainActivity extends BridgeActivity {
               private SwipeRefreshLayout swipeRefreshLayout;
               private ProgressBar progressBar;
-              private String mainUrl;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  mainUrl = "${{ steps.meta.outputs.url }}";
-                  
                   if (!isNetworkAvailable()) {
                       loadErrorPage();
                   }
@@ -127,15 +135,9 @@ jobs:
                   WebView webView = getBridge().getWebView();
                   if (webView != null && swipeRefreshLayout == null) {
                       ViewGroup parent = (ViewGroup) webView.getParent();
-                      
                       swipeRefreshLayout = new SwipeRefreshLayout(this);
-                      swipeRefreshLayout.setLayoutParams(new RelativeLayout.LayoutParams(-1, -1));
-                      
-                      if (parent != null) {
-                          parent.removeView(webView);
-                      }
-                      
-                      swipeRefreshLayout.addView(webView);
+                      if (parent != null) { parent.removeView(webView); }
+                      swipeRefreshLayout.addView(webView, new ViewGroup.LayoutParams(-1, -1));
                       
                       progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                       progressBar.setIndeterminate(true);
@@ -143,35 +145,26 @@ jobs:
                       
                       RelativeLayout mainLayout = new RelativeLayout(this);
                       mainLayout.addView(swipeRefreshLayout);
-                      
-                      RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(-1, 15);
-                      mainLayout.addView(progressBar, pbParams);
+                      mainLayout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 15));
                       
                       setContentView(mainLayout);
-
                       swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
 
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
                           public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                               super.onPageStarted(view, url, favicon);
-                              if (!url.contains("error.html")) {
-                                  progressBar.setVisibility(View.VISIBLE);
-                              }
+                              if (!url.contains("error.html")) progressBar.setVisibility(View.VISIBLE);
                           }
-
                           @Override
                           public void onPageFinished(WebView view, String url) {
                               super.onPageFinished(view, url);
                               swipeRefreshLayout.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
                           }
-
                           @Override
                           public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                              if (request.isForMainFrame()) {
-                                  loadErrorPage();
-                              }
+                              if (request.isForMainFrame()) loadErrorPage();
                           }
                       });
                   }
@@ -181,7 +174,7 @@ jobs:
               public void onBackPressed() {
                   WebView webView = getBridge().getWebView();
                   if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
-                      webView.loadUrl(mainUrl);
+                      webView.loadUrl("${{ steps.meta.outputs.url }}");
                   } else if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
