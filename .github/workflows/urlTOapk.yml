@@ -67,12 +67,16 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
-      - name: Professional Optimization
+      - name: Professional Optimization & Fix Duplicates
         run: |
-          echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
-          sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")' android/app/build.gradle
+          # ১. ডুপ্লিকেট ক্লাস এরর ফিক্স (সবচেয়ে গুরুত্বপূর্ণ)
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          
+          # ২. গ্র্যাডল কনফিগারেশন আপডেট (কনফ্লিক্ট সলভ করতে)
+          sed -i '/dependencies {/a \    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))\n    implementation("org.jetbrains.kotlin:kotlin-stdlib")\n    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")' android/app/build.gradle
 
-          # MainActivity - এরর মুক্ত রিভাইজড কোড
+          # ৩. MainActivity - ফিক্সড কোড
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
