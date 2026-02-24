@@ -33,7 +33,7 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Initialize Capacitor
+      - name: Initialize Project
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           mkdir -p dist && echo "<html></html>" > dist/index.html
@@ -49,21 +49,21 @@ jobs:
           EOF
           npx cap copy android
 
-      - name: Generate Professional Icons
+      - name: Branding & Assets
         run: |
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
-            # এই কমান্ডটি সরাসরি assets ফোল্ডার থেকে icon.png নিয়ে অ্যান্ড্রয়েড আইকন জেনারেট করবে
-            npx capacitor-assets generate --android --iconPath assets/icon.png
+            # আইকন জেনারেট করার সঠিক কমান্ড (Latest Version)
+            npx capacitor-assets generate --android --assetPath assets
           fi
 
-      - name: Configure Pro Features
+      - name: Professional Optimization
         run: |
-          # Fix Kotlin Duplicate Classes
+          # ১. ডুপ্লিকেট ক্লাস ও ডিপেন্ডেন্সি ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # Inject Dynamic Swipe-to-Refresh & Back Button Logic
+          # ২. ডায়নামিক সোয়াইপ-টু-রিফ্রেশ ও ব্যাক বাটন লজিক ইনজেকশন
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -109,17 +109,17 @@ jobs:
           }
           EOF
 
-          # Set App Versioning
+          # ৩. ভার্সন কন্ট্রোল আপডেট
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
-      - name: Build Android APK
+      - name: Build Application
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Archive Production APK
+      - name: Export APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
