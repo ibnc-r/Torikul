@@ -1,4 +1,4 @@
-name: URL to APK Converter (Professional Webview)
+name: Professional URL to APK Converter
 
 on:
   push:
@@ -12,11 +12,6 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
 
       - name: Extract Metadata
         id: meta
@@ -32,128 +27,146 @@ jobs:
           echo "version=$APP_VER" >> $GITHUB_OUTPUT
           echo "code=$APP_CODE" >> $GITHUB_OUTPUT
 
-      - name: Setup Java 21
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
 
-      - name: Initialize Capacitor
+      - name: Generate Android Native Project
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
-          mkdir -p dist && touch dist/index.html
-          cat <<EOF > capacitor.config.json
-          {
-            "appId": "${{ steps.meta.outputs.package }}",
-            "appName": "${{ steps.meta.outputs.name }}",
-            "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
+          # অ্যান্ড্রয়েড প্রজেক্ট স্ট্রাকচার তৈরি
+          mkdir -p app/src/main/java/${{ steps.meta.outputs.package // ./ / }}
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+          # ১. Build Gradle ফাইল তৈরি
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace "${{ steps.meta.outputs.package }}"
+              compileSdk 34
+              defaultConfig {
+                  applicationId "${{ steps.meta.outputs.package }}"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode ${{ steps.meta.outputs.code }}
+                  versionName "${{ steps.meta.outputs.version }}"
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
+              implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
           }
           EOF
-          npx cap add android || true
 
-      - name: Configure Advanced Android Features
-        run: |
-          # ১. SwipeRefreshLayout ডিপেন্ডেন্সি যোগ করা
-          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
-          
-          # ২. ডুপ্লিকেট ক্লাস ফিক্স
-          sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
-
-          # ৩. আইকন জেনারেট
-          if [ -f "assets/icon.png" ]; then npx capacitor-assets generate --android; fi
-
-          # ৪. পারমিশন ঠিক করা (ডুপ্লিকেট রিমুভ করে ফ্রেশ ভাবে অ্যাড)
-          sed -i '/<uses-permission/d' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
-
-          # ৫. Layout এ SwipeRefreshLayout যুক্ত করা
-          LAYOUT_FILE="android/app/src/main/res/layout/activity_main.xml"
-          mkdir -p android/app/src/main/res/layout
-          cat <<EOF > "$LAYOUT_FILE"
+          # ২. Layout (activity_main.xml) - Swipe to Refresh সহ
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
               xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/swipe_container"
+              android:id="@+id/swipeRefresh"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
-              <FrameLayout
-                  android:id="@+id/webview_container"
+              <WebView
+                  android:id="@+id/webView"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৬. MainActivity.java আপডেট (Back Button + Swipe to Refresh)
-          PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
-          FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
-          
-          cat <<EOF > "$FILE_PATH"
+          # ৩. MainActivity.java - প্রফেশনাল লজিক
+          PACKAGE_PATH="app/src/main/java/${{ steps.meta.outputs.package // . / / }}"
+          cat <<EOF > "$PACKAGE_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
+          import android.webkit.WebSettings;
           import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import androidx.appcompat.app.AppCompatActivity;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-          import com.getcapacitor.BridgeActivity;
 
-          public class MainActivity extends BridgeActivity {
-              private SwipeRefreshLayout swipeRefreshLayout;
+          public class MainActivity extends AppCompatActivity {
+              private WebView webView;
+              private SwipeRefreshLayout swipeRefresh;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-              }
+                  setContentView(R.layout.activity_main);
 
-              @Override
-              public void onResume() {
-                  super.onResume();
-                  final WebView webView = this.bridge.getWebView();
-                  swipeRefreshLayout = findViewById(R.id.swipe_container);
+                  webView = findViewById(R.id.webView);
+                  swipeRefresh = findViewById(R.id.swipeRefresh);
 
-                  if (swipeRefreshLayout != null && webView != null) {
-                      swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                          @Override
-                          public void onRefresh() {
-                              webView.reload();
-                          }
-                      });
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
 
-                      webView.setWebViewClient(new com.getcapacitor.BridgeWebViewClient(this.bridge) {
-                          @Override
-                          public void onPageFinished(WebView view, String url) {
-                              super.onPageFinished(view, url);
-                              swipeRefreshLayout.setRefreshing(false);
-                          }
-                      });
-                  }
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          swipeRefresh.setRefreshing(false);
+                      }
+                  });
+
+                  webView.loadUrl("${{ steps.meta.outputs.url }}");
+
+                  swipeRefresh.setOnRefreshListener(() -> webView.reload());
               }
 
               @Override
               public void onBackPressed() {
-                  if (this.bridge.getWebView().canGoBack()) {
-                      this.bridge.getWebView().goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
+                  if (webView.canGoBack()) { webView.goBack(); } 
+                  else { super.onBackPressed(); }
               }
           }
           EOF
 
-          # ৭. ভার্সন ও অ্যাপ নাম ফিক্স
-          sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-          if [ -f "android/app/src/main/res/values/strings.xml" ]; then
-            sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
+          # ৪. AndroidManifest.xml
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="${{ steps.meta.outputs.name }}"
+                  android:icon="@mipmap/ic_launcher"
+                  android:theme="@style/Theme.AppCompat.NoActionBar"
+                  android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # ৫. Strings and Icon (ব্যাসিক আইকন হিসেবে রাখা হচ্ছে)
+          echo '<resources><string name="app_name">${{ steps.meta.outputs.name }}</string></resources>' > app/src/main/res/values/strings.xml
+          
+          # আইকন থাকলে তা কপি করা
+          if [ -d "assets" ] && [ -f "assets/icon.png" ]; then
+             # আইকন জেনারেশনের জন্য একটি সিম্পল কমান্ড বা ডিফল্ট আইকন রাখা যায়
+             echo "Icon found, use it in real project"
           fi
 
-          npx cap sync android
-
-      - name: Build APK
+      - name: Build with Gradle
         run: |
-          cd android && chmod +x gradlew
+          gradle wrapper
           ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: ${{ steps.meta.outputs.name }}
+          path: app/build/outputs/apk/debug/app-debug.apk
