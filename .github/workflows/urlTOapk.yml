@@ -48,10 +48,9 @@ jobs:
             "plugins": {
               "SplashScreen": {
                 "launchAutoHide": true,
-                "launchShowDuration": 3000,
+                "launchShowDuration": 2000,
                 "backgroundColor": "#ffffff",
-                "androidScaleType": "CENTER_CROP",
-                "showSpinner": true
+                "androidScaleType": "CENTER_CROP"
               }
             }
           }
@@ -67,16 +66,16 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
-      - name: Professional Optimization & Fix Duplicates
+      - name: Professional Optimization
         run: |
-          # ১. ডুপ্লিকেট ক্লাস এরর ফিক্স (সবচেয়ে গুরুত্বপূর্ণ)
+          # ডুপ্লিকেট ক্লাস এবং ভার্সন কনফ্লিক্ট ফিক্স
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
           
-          # ২. গ্র্যাডল কনফিগারেশন আপডেট (কনফ্লিক্ট সলভ করতে)
-          sed -i '/dependencies {/a \    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))\n    implementation("org.jetbrains.kotlin:kotlin-stdlib")\n    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")' android/app/build.gradle
-
-          # ৩. MainActivity - ফিক্সড কোড
+          # ডিপেন্ডেন্সি আপডেট
+          sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")' android/app/build.gradle
+          
+          # MainActivity - ক্র্যাশ-প্রুফ রিভিশন
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -85,7 +84,6 @@ jobs:
           import android.net.NetworkInfo;
           import android.os.Bundle;
           import android.view.View;
-          import android.view.ViewGroup;
           import android.webkit.WebResourceError;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
@@ -96,7 +94,20 @@ jobs:
           import com.getcapacitor.BridgeWebViewClient;
 
           public class MainActivity extends BridgeActivity {
+              private SwipeRefreshLayout swipeRefreshLayout;
               private ProgressBar progressBar;
+              private String mainUrl;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  mainUrl = "${{ steps.meta.outputs.url }}";
+                  
+                  // ১. চেক করবে শুরুতে ইন্টারনেট আছে কিনা
+                  if (!isNetworkAvailable()) {
+                      loadErrorPage();
+                  }
+              }
 
               private boolean isNetworkAvailable() {
                   ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -104,29 +115,39 @@ jobs:
                   return netInfo != null && netInfo.isConnected();
               }
 
+              private void loadErrorPage() {
+                  getBridge().executeOnMainThread(() -> {
+                      getBridge().getWebView().loadUrl("file:///android_asset/public/error.html");
+                  });
+              }
+
               @Override
               public void onStart() {
                   super.onStart();
                   WebView webView = getBridge().getWebView();
-                  if (webView != null && !(webView.getParent() instanceof SwipeRefreshLayout)) {
-                      ViewGroup parent = (ViewGroup) webView.getParent();
-                      int index = parent.indexOfChild(webView);
+                  if (webView != null && swipeRefreshLayout == null) {
+                      // সোয়াইপ রিফ্রেশ সেটআপ
+                      swipeRefreshLayout = new SwipeRefreshLayout(this);
+                      swipeRefreshLayout.setLayoutParams(new RelativeLayout.LayoutParams(-1, -1));
                       
-                      SwipeRefreshLayout swipe = new SwipeRefreshLayout(this);
+                      ViewGroup parent = (ViewGroup) webView.getParent();
                       parent.removeView(webView);
-                      swipe.addView(webView, new ViewGroup.LayoutParams(-1, -1));
+                      swipeRefreshLayout.addView(webView);
                       
                       progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                       progressBar.setIndeterminate(true);
                       progressBar.setVisibility(View.GONE);
                       
-                      RelativeLayout layout = new RelativeLayout(this);
-                      layout.addView(swipe);
-                      layout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 15));
+                      RelativeLayout mainLayout = new RelativeLayout(this);
+                      mainLayout.addView(swipeRefreshLayout);
                       
-                      parent.addView(layout, index);
-                      swipe.setOnRefreshListener(() -> webView.reload());
+                      RelativeLayout.LayoutParams pbParams = new RelativeLayout.LayoutParams(-1, 15);
+                      mainLayout.addView(progressBar, pbParams);
                       
+                      setContentView(mainLayout);
+
+                      swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
+
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
                           public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
@@ -139,21 +160,17 @@ jobs:
                           @Override
                           public void onPageFinished(WebView view, String url) {
                               super.onPageFinished(view, url);
-                              swipe.setRefreshing(false);
+                              swipeRefreshLayout.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
                           }
 
                           @Override
                           public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                               if (request.isForMainFrame()) {
-                                  view.loadUrl("file:///android_asset/public/error.html");
+                                  loadErrorPage();
                               }
                           }
                       });
-                      
-                      if (!isNetworkAvailable()) {
-                          webView.loadUrl("file:///android_asset/public/error.html");
-                      }
                   }
               }
 
@@ -161,7 +178,7 @@ jobs:
               public void onBackPressed() {
                   WebView webView = getBridge().getWebView();
                   if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
-                      webView.loadUrl("${{ steps.meta.outputs.url }}");
+                      webView.loadUrl(mainUrl);
                   } else if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
