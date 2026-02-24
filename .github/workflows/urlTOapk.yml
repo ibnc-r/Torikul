@@ -54,16 +54,15 @@ jobs:
 
       - name: Inject Professional Features & Security
         run: |
-          # ১. build.gradle কনফিগারেশন (SDK 35 আপডেট ও সিকিউরিটি)
+          # ১. build.gradle ফিক্স (minSdk 23 এবং compile/target 35)
           cat <<EOF > android/app/build.gradle
           apply plugin: 'com.android.application'
-
           android {
               namespace "${{ steps.meta.outputs.package }}"
               compileSdk 35
               defaultConfig {
                   applicationId "${{ steps.meta.outputs.package }}"
-                  minSdk 22
+                  minSdk 23
                   targetSdk 35
                   versionCode ${{ steps.meta.outputs.code }}
                   versionName "${{ steps.meta.outputs.version }}"
@@ -78,7 +77,6 @@ jobs:
                   }
               }
           }
-
           dependencies {
               implementation fileTree(dir: 'libs', include: ['*.jar'])
               implementation 'androidx.appcompat:appcompat:1.7.0'
@@ -106,31 +104,26 @@ jobs:
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৩. MainActivity জাভা কোড (Refresh + Back + Hidden URL)
+          # ৩. MainActivity জাভা কোড
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
-          
           cat <<EOF > "$FILE_PATH"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
-
           public class MainActivity extends BridgeActivity {
               private SwipeRefreshLayout swipeRefresh;
-
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   this.bridge.getWebView().loadUrl("${{ steps.meta.outputs.url }}");
-                  
                   swipeRefresh = findViewById(R.id.swipeRefresh);
                   swipeRefresh.setOnRefreshListener(() -> {
                       bridge.getWebView().reload();
                       swipeRefresh.setRefreshing(false);
                   });
               }
-
               @Override
               public void onBackPressed() {
                   if (this.bridge.getWebView().canGoBack()) {
@@ -142,7 +135,9 @@ jobs:
           }
           EOF
 
-          # ৪. পারমিশন আপডেট
+          # ৪. পারমিশন এবং Manifest ক্লিনআপ (ডুপ্লিকেট এড়াতে)
+          # ইন্টারনেটের পারমিশন ডিলিট করে ফ্রেশ করে বসানো হচ্ছে
+          sed -i '/android.permission.INTERNET/d' android/app/src/main/AndroidManifest.xml
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />' android/app/src/main/AndroidManifest.xml
 
           npx cap sync android
