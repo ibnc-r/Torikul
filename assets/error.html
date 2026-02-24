@@ -13,319 +13,297 @@
 
     body {
       min-height: 100vh;
+      width: 100vw;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
-      font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
-      padding: 1rem;
+      background: #0c0c1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       position: relative;
-      overflow-x: hidden;
     }
 
-    /* Animated Background - Moving Particles */
-    body::before {
-      content: '';
-      position: absolute;
+    /* সিম্পল ও লাইটওয়েট ব্যাকগ্রাউন্ড - শুধু transform ও opacity ব্যবহার করা হয়েছে */
+    .bg-gradient {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                  radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 60px 60px;
-      animation: particleDrift 20s linear infinite;
-      pointer-events: none;
+      background: radial-gradient(circle at 30% 40%, #1e1e3a, #0a0a14);
       z-index: 0;
     }
 
-    /* Additional floating orbs */
-    .bg-orb {
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle at center, rgba(100, 150, 255, 0.1) 0%, transparent 70%);
+    /* মিনিমাল গ্রিড - কম্পিউটেশনলি লাইট */
+    .grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: linear-gradient(rgba(80, 120, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    /* শুধু একটি ফ্লোটিং এলিমেন্ট - খুবই লাইট */
+    .glow-orb {
+      position: fixed;
+      width: 70vmax;
+      height: 70vmax;
+      background: radial-gradient(circle at center, rgba(70, 100, 255, 0.1), transparent 70%);
       border-radius: 50%;
-      filter: blur(40px);
-      animation: orbFloat 15s ease-in-out infinite alternate;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      filter: blur(60px);
       z-index: 0;
+      will-change: transform;
+      animation: slowPulse 8s ease-in-out infinite alternate;
     }
 
-    .orb-1 {
-      top: -100px;
-      left: -100px;
-      background: radial-gradient(circle at center, rgba(150, 100, 255, 0.15) 0%, transparent 80%);
-      animation-duration: 18s;
-    }
-
-    .orb-2 {
-      bottom: -150px;
-      right: -100px;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle at center, rgba(255, 150, 100, 0.1) 0%, transparent 80%);
-      animation-duration: 25s;
-      animation-delay: -5s;
-    }
-
-    .container {
+    /* মেইন কন্টেন্ট */
+    .content {
       position: relative;
       z-index: 10;
-      max-width: 700px;
-      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      padding: 2rem 1.5rem;
-      background: rgba(20, 20, 35, 0.6);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-radius: 3rem 1.5rem 3rem 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      width: 100%;
+      max-width: 700px;
+      padding: 1rem;
+      transform: translateZ(0); /* GPU অ্যাক্সিলারেশন */
+      backface-visibility: hidden;
     }
 
-    /* SVG Character Container */
-    .character-wrapper {
-      margin-bottom: 1.5rem;
-      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
-      transform-style: preserve-3d;
-      animation: characterFloat 4s ease-in-out infinite;
+    /* SVG ক্যারেক্টার - হালকা অ্যানিমেশন */
+    .character {
+      width: min(240px, 65vw);
+      height: min(240px, 65vw);
+      margin-bottom: 0.25rem;
+      filter: drop-shadow(0 0 20px rgba(80, 120, 255, 0.3));
+      will-change: transform;
+      animation: subtleFloat 5s ease-in-out infinite;
     }
 
     svg {
-      width: 240px;
-      height: 240px;
-      max-width: 80%;
-      display: inline-block;
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
-    /* Text Styles */
+    /* টেক্সট স্টাইল - সিম্পল গ্রেডিয়েন্ট */
     h1 {
-      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-size: clamp(4rem, 15vw, 7rem);
       font-weight: 800;
-      line-height: 1;
-      background: linear-gradient(135deg, #fff8e7, #c0d0ff);
+      background: linear-gradient(145deg, #ffffff, #b0c8ff);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      text-shadow: 0 2px 10px rgba(90, 120, 255, 0.3), 0 0 20px rgba(70, 130, 255, 0.2);
+      line-height: 1;
+      margin: 0.2rem 0;
       letter-spacing: -0.02em;
-      margin-bottom: 0.5rem;
-      animation: textGlow 3s ease-in-out infinite alternate;
+      text-shadow: 0 0 30px rgba(70, 120, 255, 0.3);
     }
 
     .subtitle {
-      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      font-size: clamp(1.2rem, 5vw, 1.8rem);
       font-weight: 500;
-      background: linear-gradient(135deg, #aaaaff, #88aaff);
+      background: linear-gradient(135deg, #aac0ff, #ffb0aa);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      margin-bottom: 1rem;
-      letter-spacing: 1px;
       text-transform: uppercase;
-      opacity: 0.9;
+      letter-spacing: 3px;
+      margin-bottom: 0.5rem;
     }
 
-    .description {
-      font-size: clamp(1rem, 3vw, 1.25rem);
-      color: rgba(220, 225, 255, 0.8);
-      margin-bottom: 2.5rem;
+    .message {
+      font-size: clamp(0.95rem, 3.5vw, 1.2rem);
+      color: rgba(220, 230, 255, 0.8);
+      max-width: 420px;
+      margin: 0.5rem auto 1.2rem;
+      line-height: 1.5;
       font-weight: 300;
-      line-height: 1.6;
-      max-width: 450px;
-      margin-left: auto;
-      margin-right: auto;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding-top: 1.5rem;
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      padding: 0 1rem;
     }
 
-    .retry-button {
-      background: linear-gradient(145deg, #2c2c4a, #1a1a30);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #eef5ff;
+    /* বাটন - মিনিমাল ইফেক্ট */
+    .retry-btn {
+      background: rgba(30, 30, 50, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(150, 180, 255, 0.2);
+      color: white;
       font-size: 1.1rem;
       font-weight: 600;
-      padding: 1rem 2.5rem;
-      border-radius: 60px 20px 60px 20px;
+      padding: 0.9rem 2.8rem;
+      border-radius: 60px;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.2);
-      letter-spacing: 1px;
-      backdrop-filter: blur(5px);
-      outline: none;
+      transition: all 0.2s ease;
+      letter-spacing: 1.5px;
+      margin: 0.8rem 0;
       border: none;
-      font-family: inherit;
-      animation: buttonPulse 2s infinite alternate;
+      box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+      will-change: transform, box-shadow;
     }
 
-    .retry-button:hover {
-      background: linear-gradient(145deg, #3a3a62, #22223c);
-      transform: scale(1.05) translateY(-3px);
-      border-radius: 30px 60px 30px 60px;
-      box-shadow: 0 18px 30px -10px black;
-      color: white;
+    .retry-btn:hover {
+      background: rgba(50, 50, 80, 0.9);
+      border-color: rgba(170, 200, 255, 0.4);
+      transform: scale(1.02);
+      box-shadow: 0 12px 25px -8px rgba(0, 0, 0, 0.7);
     }
 
-    .retry-button:active {
-      transform: scale(0.98) translateY(2px);
-      box-shadow: 0 5px 15px -5px black;
+    .retry-btn:active {
+      transform: scale(0.98);
+      transition: transform 0.05s;
     }
 
-    /* Animations */
-    @keyframes particleDrift {
-      0% { background-position: 0 0; }
-      100% { background-position: 100px 100px; }
+    /* স্ট্যাটাস ইন্ডিকেটর */
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: rgba(180, 200, 255, 0.4);
+      font-size: 0.8rem;
+      letter-spacing: 1.5px;
+      margin-top: 0.5rem;
     }
 
-    @keyframes orbFloat {
-      0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-      100% { transform: translate(40px, 40px) scale(1.2); opacity: 0.8; }
-    }
-
-    @keyframes characterFloat {
-      0% { transform: translateY(0px) rotate(0deg); }
-      25% { transform: translateY(-8px) rotate(-1deg); }
-      75% { transform: translateY(8px) rotate(1deg); }
-      100% { transform: translateY(0px) rotate(0deg); }
-    }
-
-    @keyframes textGlow {
-      0% { text-shadow: 0 2px 15px rgba(100, 140, 255, 0.3), 0 0 30px rgba(70, 100, 255, 0.2); }
-      100% { text-shadow: 0 2px 25px rgba(140, 180, 255, 0.6), 0 0 50px rgba(100, 150, 255, 0.4); }
-    }
-
-    @keyframes buttonPulse {
-      0% { box-shadow: 0 5px 15px -5px rgba(0, 0, 0, 0.7), 0 0 0 0 rgba(90, 130, 255, 0.3); }
-      100% { box-shadow: 0 10px 25px -5px black, 0 0 20px 5px rgba(90, 130, 255, 0.2); }
-    }
-
-    /* Additional decorative line */
-    .glow-line {
-      width: 150px;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, rgba(170, 200, 255, 0.5), transparent);
-      margin: 0.8rem auto 1.5rem;
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: #ff8a8a;
       border-radius: 50%;
-      animation: lineWidth 3s infinite alternate;
+      opacity: 0.7;
+      box-shadow: 0 0 10px #ff6a6a;
     }
 
-    @keyframes lineWidth {
-      0% { width: 80px; opacity: 0.3; }
-      100% { width: 200px; opacity: 1; }
+    /* সিম্পল অ্যানিমেশন - খুবই হালকা */
+    @keyframes slowPulse {
+      0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.8); }
+      100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.1); }
     }
 
-    footer {
-      margin-top: 2rem;
-      color: rgba(255, 255, 255, 0.2);
-      font-size: 0.85rem;
-      letter-spacing: 2px;
+    @keyframes subtleFloat {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* রেসপন্সিভ */
+    @media (max-width: 480px) {
+      .character {
+        width: min(180px, 55vw);
+        height: min(180px, 55vw);
+      }
+      
+      .retry-btn {
+        padding: 0.7rem 2rem;
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .character {
+        width: min(150px, 30vh);
+        height: min(150px, 30vh);
+      }
     }
   </style>
 </head>
 <body>
-  <div class="bg-orb orb-1"></div>
-  <div class="bg-orb orb-2"></div>
+  <!-- লাইটওয়েট ব্যাকগ্রাউন্ড -->
+  <div class="bg-gradient"></div>
+  <div class="grid"></div>
+  <div class="glow-orb"></div>
 
-  <div class="container">
-    <div class="character-wrapper">
-      <!-- Animated SVG Character (No Internet / Error Mascot) -->
+  <!-- মেইন কন্টেন্ট -->
+  <div class="content">
+    <!-- অপটিমাইজড এসভিজি - অপ্রয়োজনীয় অ্যানিমেশন বাদ দেওয়া হয়েছে -->
+    <div class="character">
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Background Circle (glow) -->
-        <circle cx="100" cy="100" r="85" fill="url(#gradBg)" opacity="0.3" />
+        <!-- ব্যাকগ্রাউন্ড গ্লো -->
+        <circle cx="100" cy="100" r="75" fill="url(#softGrad)" opacity="0.15" />
+        
         <defs>
-          <linearGradient id="gradBg" x1="30" y1="30" x2="170" y2="170" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#6688ff" />
-            <stop offset="1" stop-color="#aa88ff" />
+          <radialGradient id="softGrad">
+            <stop stop-color="#5588ff" offset="0%" />
+            <stop stop-color="#2244aa" offset="100%" />
+          </radialGradient>
+          <linearGradient id="headGrad" x1="30" y1="30" x2="170" y2="170">
+            <stop stop-color="#252542" />
+            <stop offset="1" stop-color="#151530" />
           </linearGradient>
         </defs>
 
-        <!-- Main Character Face / Robot-like (No Internet Connection) -->
-        <circle cx="100" cy="100" r="70" fill="#1f1f3a" stroke="url(#gradOutline)" stroke-width="4" />
-        <defs>
-          <linearGradient id="gradOutline" x1="20" y1="20" x2="180" y2="180">
-            <stop stop-color="#9ab0ff" />
-            <stop offset="1" stop-color="#6b8cff" />
-          </linearGradient>
-        </defs>
+        <!-- প্রধান ক্যারেক্টার -->
+        <circle cx="100" cy="100" r="62" fill="url(#headGrad)" stroke="#5577cc" stroke-width="2.5" />
 
-        <!-- Eyes with animation (looking around) -->
-        <circle cx="70" cy="80" r="12" fill="#ffffff" />
-        <circle cx="130" cy="80" r="12" fill="#ffffff" />
-        <!-- Pupils (animated) -->
-        <circle cx="74" cy="83" r="6" fill="#223344">
-          <animate attributeName="cx" values="74;72;76;74" dur="4s" repeatCount="indefinite" />
-          <animate attributeName="cy" values="83;81;85;83" dur="3.5s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="126" cy="83" r="6" fill="#223344">
-          <animate attributeName="cx" values="126;124;128;126" dur="4.2s" repeatCount="indefinite" />
-          <animate attributeName="cy" values="83;81;85;83" dur="3.8s" repeatCount="indefinite" />
-        </circle>
+        <!-- চোখ - মিনিমাল অ্যানিমেশন (শুধু পিউপিল মুভ) -->
+        <circle cx="72" cy="85" r="12" fill="#ffffff" />
+        <circle cx="128" cy="85" r="12" fill="#ffffff" />
+        
+        <!-- পিউপিল - হালকা অ্যানিমেশন (শুধু transform ব্যবহার) -->
+        <g>
+          <circle cx="72" cy="85" r="6" fill="#1a2a3a">
+            <animate attributeName="cx" values="70;74;72" dur="3s" repeatCount="indefinite" />
+            <animate attributeName="cy" values="83;87;85" dur="3s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="128" cy="85" r="6" fill="#1a2a3a">
+            <animate attributeName="cx" values="126;130;128" dur="3.2s" repeatCount="indefinite" />
+            <animate attributeName="cy" values="83;87;85" dur="3.2s" repeatCount="indefinite" />
+          </circle>
+        </g>
 
-        <!-- Sad/Concerned Mouth (curved line) with animation -->
-        <path d="M70 130 Q 100 115, 130 130" stroke="#ffaaaa" stroke-width="5" stroke-linecap="round" fill="none">
-          <animate attributeName="d" values="M70 130 Q 100 115, 130 130; M70 135 Q 100 120, 130 135; M70 130 Q 100 115, 130 130" dur="3s" repeatCount="indefinite" />
+        <!-- মুখ - স্ট্যাটিক (অ্যানিমেশন বাদ, ল্যাগ কমানোর জন্য) -->
+        <path d="M70 125 Q 100 112, 130 125" stroke="#ffaa99" stroke-width="4" fill="none" stroke-linecap="round" />
+
+        <!-- সিগন্যাল - সিম্পল ড্যাশড লাইন (স্থির) -->
+        <path d="M55 160 L75 140 L95 150 L115 130 L135 140 L155 120" stroke="#88aaff" stroke-width="2.5" stroke-dasharray="6 4" fill="none" opacity="0.8" />
+        
+        <!-- এক্স মার্ক - অল্প অ্যানিমেশন -->
+        <path d="M160 52 L178 70 M178 52 L160 70" stroke="#ff7a7a" stroke-width="3.5" stroke-linecap="round">
+          <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
         </path>
 
-        <!-- Wifi / Signal icon with cut lines (indicating no connection) -->
-        <path d="M70 160 L 90 140 L 110 140 L 130 160" stroke="#ff9977" stroke-width="4" stroke-dasharray="6 6" fill="none">
-          <animate attributeName="stroke-dashoffset" values="0;20;0" dur="2s" repeatCount="indefinite" />
-        </path>
-        <!-- Small cross mark (x) near the signal to emphasize no internet -->
-        <path d="M150 50 L 170 70 M170 50 L 150 70" stroke="#ff6666" stroke-width="4" stroke-linecap="round" opacity="0.9">
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite" />
-        </path>
-
-        <!-- Floating dots around (connection lost indication) -->
-        <circle cx="40" cy="40" r="3" fill="#88aaff">
-          <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="170" cy="160" r="4" fill="#88aaff">
-          <animate attributeName="opacity" values="0.2;0.8;0.2" dur="2.3s" repeatCount="indefinite" />
-          <animate attributeName="r" values="3;5;3" dur="2.3s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="180" cy="40" r="3" fill="#88aaff">
-          <animate attributeName="opacity" values="0.3;1;0.3" dur="1.8s" repeatCount="indefinite" />
-        </circle>
-
-        <!-- Antennas / Mechanical detail (just for style) -->
-        <line x1="100" y1="20" x2="100" y2="35" stroke="#b0c4ff" stroke-width="3" stroke-linecap="round" />
-        <circle cx="100" cy="15" r="6" fill="#b0c4ff" />
-        <!-- Sweat drop or signal lost indication (animated) -->
-        <path d="M150 100 L 165 105 L 155 120" stroke="#aaccff" stroke-width="3" fill="none" opacity="0.5">
-          <animate attributeName="opacity" values="0.2;0.7;0.2" dur="2.2s" repeatCount="indefinite" />
-        </path>
+        <!-- অ্যান্টেনা - স্থির -->
+        <line x1="100" y1="28" x2="100" y2="42" stroke="#aac0ff" stroke-width="2.5" />
+        <circle cx="100" cy="22" r="5" fill="#aac0ff" />
       </svg>
     </div>
 
     <h1>Oops!</h1>
-    <div class="glow-line"></div>
-    <div class="subtitle">Connection Lost</div>
-    <p class="description">
-      The internet seems to have wandered off.<br />
-      Please check your connection and try again.
+    <div class="subtitle">no internet</div>
+    
+    <p class="message">
+      Can't reach the network.<br>
+      Check your connection.
     </p>
 
-    <button class="retry-button" onclick="window.location.reload()">
-      ⟳  Try Again
+    <button class="retry-btn" onclick="window.location.reload()">
+      ⟳  TRY AGAIN
     </button>
 
-    <footer>
-      <span>✦  no signal  ✦</span>
-    </footer>
+    <div class="status">
+      <span class="dot"></span>
+      <span>offline</span>
+      <span class="dot"></span>
+    </div>
   </div>
 
   <script>
-    // Optional: Add a small effect on button (haptic feel or just reload)
-    document.querySelector('.retry-button').addEventListener('click', function(e) {
-      // subtle animation is already in css, but we can add a little extra
-      this.style.transform = 'scale(0.95)';
+    // বাটন ইফেক্ট - ন্যূনতম
+    document.querySelector('.retry-btn').addEventListener('click', function(e) {
+      this.style.transform = 'scale(0.96)';
       setTimeout(() => {
         this.style.transform = '';
-      }, 150);
-      // Actually reload is handled by onclick, but if you want a custom check you can modify
-      // This simply reloads the page as a retry.
+      }, 80);
     });
   </script>
 </body>
