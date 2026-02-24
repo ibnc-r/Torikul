@@ -49,15 +49,15 @@ jobs:
               "SplashScreen": {
                 "launchAutoHide": false,
                 "backgroundColor": "#ffffff",
-                "showSpinner": true,
-                "androidScaleType": "CENTER_CROP"
+                "androidScaleType": "CENTER_CROP",
+                "showSpinner": true
               }
             }
           }
           EOF
           npx cap sync android
 
-      - name: Branding & Icons
+      - name: Branding & Assets
         run: |
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
@@ -66,10 +66,11 @@ jobs:
 
       - name: Professional Optimization
         run: |
+          # ১. ডুপ্লিকেট ক্লাস ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity with Smooth Loading Animation
+          # ২. MainActivity (টাইপ কাস্টিং এরর ফিক্স এবং লোডিং বার সহ)
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -82,6 +83,7 @@ jobs:
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
           import com.getcapacitor.BridgeWebViewClient;
+          import com.getcapacitor.plugin.SplashScreen;
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
@@ -94,14 +96,12 @@ jobs:
                       ViewGroup parent = (ViewGroup) webView.getParent();
                       int index = parent.indexOfChild(webView);
                       
-                      // Swipe Refresh
                       SwipeRefreshLayout swipe = new SwipeRefreshLayout(this);
                       parent.removeView(webView);
                       swipe.addView(webView, new ViewGroup.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT, 
                               ViewGroup.LayoutParams.MATCH_PARENT));
                       
-                      // Loading Progress Bar
                       progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                       progressBar.setIndeterminate(true);
                       progressBar.setVisibility(View.GONE);
@@ -109,10 +109,9 @@ jobs:
                       RelativeLayout layout = new RelativeLayout(this);
                       layout.addView(swipe);
                       layout.addView(progressBar, new RelativeLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, 20));
+                              ViewGroup.LayoutParams.MATCH_PARENT, 24));
                       
                       parent.addView(layout, index);
-
                       swipe.setOnRefreshListener(() -> webView.reload());
                       
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
@@ -127,10 +126,12 @@ jobs:
                               super.onPageFinished(view, url);
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
-                              // Hide Native Splash when page is ready
-                              getBridge().executeOnMainThread(() -> {
-                                  getBridge().getPlugin("SplashScreen").getInstance().hide(null);
-                              });
+                              
+                              // SplashScreen Hide Fix
+                              SplashScreen splash = (SplashScreen) getBridge().getPlugin("SplashScreen").getInstance();
+                              if (splash != null) {
+                                  splash.hide(null);
+                              }
                           }
                       });
                   }
@@ -147,6 +148,7 @@ jobs:
           }
           EOF
 
+          # ৩. ভার্সন সেট
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
