@@ -44,26 +44,54 @@ jobs:
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
+            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true },
+            "plugins": {
+              "SplashScreen": {
+                "launchShowDuration": 2000,
+                "backgroundColor": "#ffffff",
+                "showSpinner": false,
+                "androidScaleType": "CENTER_CROP"
+              }
+            }
           }
           EOF
           npx cap copy android
 
-      - name: Branding & Assets
+      - name: Branding & Splash Fix
         run: |
+          # আইকন জেনারেশন
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
-            # আইকন জেনারেট করার সঠিক কমান্ড (Latest Version)
             npx capacitor-assets generate --android --assetPath assets
           fi
 
+          # ১. SVG-কে স্প্ল্যাশ স্ক্রিন হিসেবে সেভ করা
+          mkdir -p android/app/src/main/res/drawable
+          cat <<EOF > android/app/src/main/res/drawable/ic_splash.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="320dp"
+              android:height="320dp"
+              android:viewportWidth="320"
+              android:viewportHeight="320">
+              <path android:fillColor="#FFA500" android:pathData="M160,160m-140,0a140,140 0,1 1,280 0a140,140 0,1 1,-280 0" />
+              <path android:fillColor="#FFFFFF" android:pathData="M130,120h60v80h-60z" />
+          </vector>
+          EOF
+
+          # ২. অ্যান্ড্রয়েড থিম ফিক্স (স্প্ল্যাশ স্ক্রিন দেখানোর জন্য)
+          cat <<EOF > android/app/src/main/res/values/styles.xml
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+                  <item name="android:windowBackground">@drawable/ic_splash</item>
+              </style>
+          </resources>
+          EOF
+
       - name: Professional Optimization
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ও ডিপেন্ডেন্সি ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # ২. ডায়নামিক সোয়াইপ-টু-রিফ্রেশ ও ব্যাক বাটন লজিক ইনজেকশন
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -109,7 +137,6 @@ jobs:
           }
           EOF
 
-          # ৩. ভার্সন কন্ট্রোল আপডেট
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
