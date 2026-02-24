@@ -54,7 +54,7 @@ jobs:
 
       - name: Inject Professional Features & Security
         run: |
-          # ১. build.gradle ফিক্স (minSdk 23 এবং compile/target 35)
+          # ১. build.gradle ফিক্স
           cat <<EOF > android/app/build.gradle
           apply plugin: 'com.android.application'
           android {
@@ -135,8 +135,11 @@ jobs:
           }
           EOF
 
-          # ৪. পারমিশন এবং Manifest ক্লিনআপ (ডুপ্লিকেট এড়াতে)
-          # ইন্টারনেটের পারমিশন ডিলিট করে ফ্রেশ করে বসানো হচ্ছে
+          # ৪. Manifest ফিক্স (স্প্ল্যাশ স্ক্রিন এরর সমাধান)
+          # থিম পরিবর্তন করে AppTheme করা হচ্ছে যা ডিফল্টভাবে থাকে
+          sed -i 's/Theme.SplashScreen/Theme.AppCompat.NoActionBar/g' android/app/src/main/AndroidManifest.xml
+          
+          # পারমিশন ক্লিনআপ
           sed -i '/android.permission.INTERNET/d' android/app/src/main/AndroidManifest.xml
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />' android/app/src/main/AndroidManifest.xml
 
