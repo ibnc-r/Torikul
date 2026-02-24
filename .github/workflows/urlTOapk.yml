@@ -2,8 +2,7 @@ name: Professional Webview APK Builder
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -35,7 +34,7 @@ jobs:
 
       - name: Initialize Project
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen
           mkdir -p dist && echo "<html></html>" > dist/index.html
           npx cap init "${{ steps.meta.outputs.name }}" "${{ steps.meta.outputs.package }}" --web-dir dist
           npx cap add android
@@ -45,52 +44,40 @@ jobs:
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
+            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true },
+            "plugins": {
+              "SplashScreen": {
+                "launchAutoHide": false,
+                "backgroundColor": "#ffffff",
+                "androidScaleType": "CENTER_CROP"
+              }
+            }
           }
           EOF
-          npx cap copy android
+          npx cap sync android
 
       - name: Branding & Assets
         run: |
-          # ১. আইকন জেনারেশন
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
 
-          # ২. SVG স্প্ল্যাশ স্ক্রিন (Vector Drawable এ রূপান্তর)
-          mkdir -p android/app/src/main/res/drawable
-          cat <<EOF > android/app/src/main/res/drawable/ic_splash_logo.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="320dp"
-              android:height="320dp"
-              android:viewportWidth="320"
-              android:viewportHeight="320">
-              <path android:fillColor="#FFD700" android:pathData="M160,160m-140,0a140,140 0,1 1,280 0a140,140 0,1 1,-280 0"/>
-              <path android:fillColor="#FFFFFF" android:pathData="M100,140h120v40h-120z"/>
-          </vector>
-          EOF
-
-          # ৩. Theme Fix (ম্যানিফেস্ট এরর সমাধানের জন্য সঠিক স্টাইল নাম ব্যবহার)
-          cat <<EOF > android/app/src/main/res/values/styles.xml
+          # সঠিক স্প্ল্যাশ স্ক্রিন থিম এবং কালার সেটিংস
+          mkdir -p android/app/src/main/res/values
+          cat <<EOF > android/app/src/main/res/values/colors.xml
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-                  <item name="android:windowBackground">@drawable/ic_splash_logo</item>
-              </style>
-              <style name="AppTheme.NoActionBarLaunch" parent="AppTheme">
-                  <item name="android:windowBackground">@drawable/ic_splash_logo</item>
-              </style>
+              <color name="ic_launcher_background">#ffffff</color>
           </resources>
           EOF
 
       - name: Professional Optimization
         run: |
-          # Kotlin Duplicate ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity লজিক (Refresh + Back Button)
+          # MainActivity আপডেট: ব্ল্যাক স্ক্রিন প্রতিরোধে 'launchAutoHide: false' হ্যান্ডলিং
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -100,6 +87,7 @@ jobs:
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
           import com.getcapacitor.BridgeWebViewClient;
+          import com.getcapacitor.plugin.SplashScreen;
 
           public class MainActivity extends BridgeActivity {
               @Override
@@ -115,12 +103,16 @@ jobs:
                               ViewGroup.LayoutParams.MATCH_PARENT, 
                               ViewGroup.LayoutParams.MATCH_PARENT));
                       parent.addView(swipe, index);
+                      
                       swipe.setOnRefreshListener(() -> webView.reload());
+                      
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
                           public void onPageFinished(WebView view, String url) {
                               super.onPageFinished(view, url);
                               swipe.setRefreshing(false);
+                              // ওয়েবসাইট লোড শেষ হলে স্প্ল্যাশ স্ক্রিন হাইড হবে
+                              getBridge().getPlugin("SplashScreen").getInstance().hide(null);
                           }
                       });
                   }
@@ -136,7 +128,6 @@ jobs:
           }
           EOF
 
-          # ভার্সন সিঙ্ক
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
