@@ -1,4 +1,4 @@
-name: Final Professional Webview APK
+name: Professional URL to APK (Final Success)
 
 on:
   push:
@@ -50,33 +50,19 @@ jobs:
           EOF
           npx cap copy android
 
-      - name: Fix Duplicate Class & Inject Features
+      - name: Force Professional Swipe Refresh Logic
         run: |
-          # ১. ডুপ্লিকেট ক্লাস এরর ফিক্স করার জন্য প্রপার্টিজ সেট করা
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
+          # ১. ডুপ্লিকেট ক্লাস ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
-
-          # ২. SwipeRefreshLayout এবং কনফ্লিক্ট ফিক্স ডিপেন্ডেন্সি
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # ৩. Layout আপডেট
-          cat <<EOF > android/app/src/main/res/layout/activity_main.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/swipe_container"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
-              <WebView android:id="@+id/webview" android:layout_width="match_parent" android:layout_height="match_parent" />
-          </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-          EOF
-
-          # ৪. MainActivity আপডেট (Swipe to Refresh + Back Button)
+          # ২. MainActivity.java - সম্পূর্ণ ডায়নামিক লেআউট লজিক
+          # এখানে আমরা XML ফাইল ছাড়াই সরাসরি জাভা কোডে SwipeRefreshLayout ইনজেক্ট করছি।
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
+          import android.view.ViewGroup;
           import android.webkit.WebView;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
@@ -84,12 +70,27 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+              }
+
+              @Override
               public void onStart() {
                   super.onStart();
-                  SwipeRefreshLayout swipe = findViewById(R.id.swipe_container);
                   WebView webView = getBridge().getWebView();
-                  if (swipe != null && webView != null) {
+                  if (webView != null && !(webView.getParent() instanceof SwipeRefreshLayout)) {
+                      ViewGroup parent = (ViewGroup) webView.getParent();
+                      int index = parent.indexOfChild(webView);
+                      
+                      SwipeRefreshLayout swipe = new SwipeRefreshLayout(this);
+                      parent.removeView(webView);
+                      swipe.addView(webView, new ViewGroup.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, 
+                              ViewGroup.LayoutParams.MATCH_PARENT));
+                      parent.addView(swipe, index);
+
                       swipe.setOnRefreshListener(() -> webView.reload());
+                      
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
                           public void onPageFinished(WebView view, String url) {
@@ -99,6 +100,7 @@ jobs:
                       });
                   }
               }
+
               @Override
               public void onBackPressed() {
                   if (getBridge().getWebView().canGoBack()) {
@@ -110,15 +112,9 @@ jobs:
           }
           EOF
 
-          # ৫. ভার্সন সেট
+          # ৩. ভার্সন সেটিংস
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-
-          # আইকন জেনারেট (যদি থাকে)
-          if [ -f "assets/icon.png" ]; then
-            npm install @capacitor/assets --save-dev
-            npx capacitor-assets generate --android
-          fi
 
       - name: Build APK
         run: |
