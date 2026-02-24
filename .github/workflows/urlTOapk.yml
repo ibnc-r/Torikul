@@ -27,32 +27,33 @@ jobs:
           echo "version=$APP_VER" >> $GITHUB_OUTPUT
           echo "code=$APP_CODE" >> $GITHUB_OUTPUT
 
-      - name: Setup Java 17
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
-      - name: Generate Android Native Project
+      - name: Scaffold Native Android Project
         run: |
           # অ্যান্ড্রয়েড প্রজেক্ট স্ট্রাকচার তৈরি
-          mkdir -p app/src/main/java/${{ steps.meta.outputs.package // ./ / }}
+          mkdir -p app/src/main/java/$(echo ${{ steps.meta.outputs.package }} | sed 's/\./\//g')
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
 
-          # ১. Build Gradle ফাইল তৈরি
+          # ১. build.gradle তৈরি
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
           }
           allprojects { repositories { google(); mavenCentral() } }
           EOF
 
+          # ২. app/build.gradle তৈরি
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
-              namespace "${{ steps.meta.outputs.package }}"
+              namespace '${{ steps.meta.outputs.package }}'
               compileSdk 34
               defaultConfig {
                   applicationId "${{ steps.meta.outputs.package }}"
@@ -61,15 +62,41 @@ jobs:
                   versionCode ${{ steps.meta.outputs.code }}
                   versionName "${{ steps.meta.outputs.version }}"
               }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
+              implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+              implementation 'androidx.webkit:webkit:1.9.0'
           }
           EOF
 
-          # ২. Layout (activity_main.xml) - Swipe to Refresh সহ
+          # ৩. AndroidManifest.xml (Internet permission সহ)
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <application
+                  android:label="${{ steps.meta.outputs.name }}"
+                  android:icon="@mipmap/ic_launcher"
+                  android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+                  android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          # ৪. Layout (SwipeRefreshLayout + WebView)
           cat <<EOF > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
@@ -84,9 +111,9 @@ jobs:
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৩. MainActivity.java - প্রফেশনাল লজিক
-          PACKAGE_PATH="app/src/main/java/${{ steps.meta.outputs.package // . / / }}"
-          cat <<EOF > "$PACKAGE_PATH/MainActivity.java"
+          # ৫. MainActivity.java (Full logic)
+          PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
+          cat <<EOF > app/src/main/java/$PACKAGE_PATH/MainActivity.java
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
           import android.webkit.WebSettings;
@@ -121,52 +148,43 @@ jobs:
 
                   webView.loadUrl("${{ steps.meta.outputs.url }}");
 
-                  swipeRefresh.setOnRefreshListener(() -> webView.reload());
+                  swipeRefresh.setOnRefreshListener(() -> {
+                      webView.reload();
+                  });
               }
 
               @Override
               public void onBackPressed() {
-                  if (webView.canGoBack()) { webView.goBack(); } 
-                  else { super.onBackPressed(); }
+                  if (webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
               }
           }
           EOF
 
-          # ৪. AndroidManifest.xml
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <application
-                  android:label="${{ steps.meta.outputs.name }}"
-                  android:icon="@mipmap/ic_launcher"
-                  android:theme="@style/Theme.AppCompat.NoActionBar"
-                  android:usesCleartextTraffic="true">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
+          # ৬. Gradle Wrapper সেটাপ
+          gradle wrapper --gradle-version 8.5
 
-          # ৫. Strings and Icon (ব্যাসিক আইকন হিসেবে রাখা হচ্ছে)
-          echo '<resources><string name="app_name">${{ steps.meta.outputs.name }}</string></resources>' > app/src/main/res/values/strings.xml
-          
-          # আইকন থাকলে তা কপি করা
-          if [ -d "assets" ] && [ -f "assets/icon.png" ]; then
-             # আইকন জেনারেশনের জন্য একটি সিম্পল কমান্ড বা ডিফল্ট আইকন রাখা যায়
-             echo "Icon found, use it in real project"
+      - name: Generate App Icons
+        run: |
+          # আইকন জেনারেশন (যদি assets এ icon.png থাকে)
+          if [ -f "assets/icon.png" ]; then
+            npm install -g @capacitor/assets
+            npx capacitor-assets generate --android --assetPath assets
+          else
+            # ডিফল্ট আইকন ফোল্ডার তৈরি (এরর এড়াতে)
+            mkdir -p app/src/main/res/mipmap-mdpi
           fi
 
-      - name: Build with Gradle
+      - name: Build APK
         run: |
-          gradle wrapper
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.meta.outputs.name }}
+          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
           path: app/build/outputs/apk/debug/app-debug.apk
