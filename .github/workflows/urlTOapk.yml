@@ -1,4 +1,4 @@
-name: Professional URL to APK (Final Success)
+name: Professional Webview APK Builder
 
 on:
   push:
@@ -13,12 +13,12 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Extract Metadata
+      - name: Parse Metadata
         id: meta
         run: |
           echo "name=$(jq -r '.appName' assets/url-metadata.json)" >> $GITHUB_OUTPUT
@@ -33,13 +33,12 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Initialize Project
+      - name: Initialize Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           mkdir -p dist && echo "<html></html>" > dist/index.html
           npx cap init "${{ steps.meta.outputs.name }}" "${{ steps.meta.outputs.package }}" --web-dir dist
           npx cap add android
-
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
@@ -50,14 +49,21 @@ jobs:
           EOF
           npx cap copy android
 
-      - name: Force Professional Swipe Refresh Logic
+      - name: Generate Professional Icons
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ফিক্স
+          if [ -f "assets/icon.png" ]; then
+            npm install @capacitor/assets --save-dev
+            # এই কমান্ডটি সরাসরি assets ফোল্ডার থেকে icon.png নিয়ে অ্যান্ড্রয়েড আইকন জেনারেট করবে
+            npx capacitor-assets generate --android --iconPath assets/icon.png
+          fi
+
+      - name: Configure Pro Features
+        run: |
+          # Fix Kotlin Duplicate Classes
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # ২. MainActivity.java - সম্পূর্ণ ডায়নামিক লেআউট লজিক
-          # এখানে আমরা XML ফাইল ছাড়াই সরাসরি জাভা কোডে SwipeRefreshLayout ইনজেক্ট করছি।
+          # Inject Dynamic Swipe-to-Refresh & Back Button Logic
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -70,27 +76,19 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-              }
-
-              @Override
               public void onStart() {
                   super.onStart();
                   WebView webView = getBridge().getWebView();
                   if (webView != null && !(webView.getParent() instanceof SwipeRefreshLayout)) {
                       ViewGroup parent = (ViewGroup) webView.getParent();
                       int index = parent.indexOfChild(webView);
-                      
                       SwipeRefreshLayout swipe = new SwipeRefreshLayout(this);
                       parent.removeView(webView);
                       swipe.addView(webView, new ViewGroup.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT, 
                               ViewGroup.LayoutParams.MATCH_PARENT));
                       parent.addView(swipe, index);
-
                       swipe.setOnRefreshListener(() -> webView.reload());
-                      
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
                           public void onPageFinished(WebView view, String url) {
@@ -100,7 +98,6 @@ jobs:
                       });
                   }
               }
-
               @Override
               public void onBackPressed() {
                   if (getBridge().getWebView().canGoBack()) {
@@ -112,17 +109,17 @@ jobs:
           }
           EOF
 
-          # ৩. ভার্সন সেটিংস
+          # Set App Versioning
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
-      - name: Build APK
+      - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Archive Production APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
