@@ -49,6 +49,7 @@ jobs:
               "SplashScreen": {
                 "launchAutoHide": false,
                 "backgroundColor": "#ffffff",
+                "showSpinner": true,
                 "androidScaleType": "CENTER_CROP"
               }
             }
@@ -56,40 +57,35 @@ jobs:
           EOF
           npx cap sync android
 
-      - name: Branding & Assets
+      - name: Branding & Icons
         run: |
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
 
-          # সঠিক স্প্ল্যাশ স্ক্রিন থিম এবং কালার সেটিংস
-          mkdir -p android/app/src/main/res/values
-          cat <<EOF > android/app/src/main/res/values/colors.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#ffffff</color>
-          </resources>
-          EOF
-
       - name: Professional Optimization
         run: |
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity আপডেট: ব্ল্যাক স্ক্রিন প্রতিরোধে 'launchAutoHide: false' হ্যান্ডলিং
+          # MainActivity with Smooth Loading Animation
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
+          import android.view.View;
           import android.view.ViewGroup;
           import android.webkit.WebView;
+          import android.widget.ProgressBar;
+          import android.widget.RelativeLayout;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
           import com.getcapacitor.BridgeWebViewClient;
-          import com.getcapacitor.plugin.SplashScreen;
 
           public class MainActivity extends BridgeActivity {
+              private ProgressBar progressBar;
+
               @Override
               public void onStart() {
                   super.onStart();
@@ -97,26 +93,49 @@ jobs:
                   if (webView != null && !(webView.getParent() instanceof SwipeRefreshLayout)) {
                       ViewGroup parent = (ViewGroup) webView.getParent();
                       int index = parent.indexOfChild(webView);
+                      
+                      // Swipe Refresh
                       SwipeRefreshLayout swipe = new SwipeRefreshLayout(this);
                       parent.removeView(webView);
                       swipe.addView(webView, new ViewGroup.LayoutParams(
                               ViewGroup.LayoutParams.MATCH_PARENT, 
                               ViewGroup.LayoutParams.MATCH_PARENT));
-                      parent.addView(swipe, index);
                       
+                      // Loading Progress Bar
+                      progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+                      progressBar.setIndeterminate(true);
+                      progressBar.setVisibility(View.GONE);
+                      
+                      RelativeLayout layout = new RelativeLayout(this);
+                      layout.addView(swipe);
+                      layout.addView(progressBar, new RelativeLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT, 20));
+                      
+                      parent.addView(layout, index);
+
                       swipe.setOnRefreshListener(() -> webView.reload());
                       
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
+                          public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                              super.onPageStarted(view, url, favicon);
+                              progressBar.setVisibility(View.VISIBLE);
+                          }
+
+                          @Override
                           public void onPageFinished(WebView view, String url) {
                               super.onPageFinished(view, url);
                               swipe.setRefreshing(false);
-                              // ওয়েবসাইট লোড শেষ হলে স্প্ল্যাশ স্ক্রিন হাইড হবে
-                              getBridge().getPlugin("SplashScreen").getInstance().hide(null);
+                              progressBar.setVisibility(View.GONE);
+                              // Hide Native Splash when page is ready
+                              getBridge().executeOnMainThread(() -> {
+                                  getBridge().getPlugin("SplashScreen").getInstance().hide(null);
+                              });
                           }
                       });
                   }
               }
+
               @Override
               public void onBackPressed() {
                   if (getBridge().getWebView().canGoBack()) {
