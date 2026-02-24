@@ -48,7 +48,7 @@ jobs:
             "plugins": {
               "SplashScreen": {
                 "launchAutoHide": true,
-                "launchShowDuration": 2000,
+                "launchShowDuration": 2500,
                 "backgroundColor": "#ffffff",
                 "androidScaleType": "CENTER_CROP"
               }
@@ -68,22 +68,20 @@ jobs:
 
       - name: Professional Optimization
         run: |
-          # ডুপ্লিকেট ক্লাস এবং ভার্সন কনফ্লিক্ট ফিক্স
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
-          
-          # ডিপেন্ডেন্সি আপডেট
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")' android/app/build.gradle
           
-          # MainActivity - ক্র্যাশ-প্রুফ রিভিশন
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
+
           import android.content.Context;
           import android.net.ConnectivityManager;
           import android.net.NetworkInfo;
           import android.os.Bundle;
           import android.view.View;
+          import android.view.ViewGroup;
           import android.webkit.WebResourceError;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
@@ -103,7 +101,6 @@ jobs:
                   super.onCreate(savedInstanceState);
                   mainUrl = "${{ steps.meta.outputs.url }}";
                   
-                  // ১. চেক করবে শুরুতে ইন্টারনেট আছে কিনা
                   if (!isNetworkAvailable()) {
                       loadErrorPage();
                   }
@@ -117,7 +114,10 @@ jobs:
 
               private void loadErrorPage() {
                   getBridge().executeOnMainThread(() -> {
-                      getBridge().getWebView().loadUrl("file:///android_asset/public/error.html");
+                      WebView webView = getBridge().getWebView();
+                      if (webView != null) {
+                          webView.loadUrl("file:///android_asset/public/error.html");
+                      }
                   });
               }
 
@@ -126,12 +126,15 @@ jobs:
                   super.onStart();
                   WebView webView = getBridge().getWebView();
                   if (webView != null && swipeRefreshLayout == null) {
-                      // সোয়াইপ রিফ্রেশ সেটআপ
+                      ViewGroup parent = (ViewGroup) webView.getParent();
+                      
                       swipeRefreshLayout = new SwipeRefreshLayout(this);
                       swipeRefreshLayout.setLayoutParams(new RelativeLayout.LayoutParams(-1, -1));
                       
-                      ViewGroup parent = (ViewGroup) webView.getParent();
-                      parent.removeView(webView);
+                      if (parent != null) {
+                          parent.removeView(webView);
+                      }
+                      
                       swipeRefreshLayout.addView(webView);
                       
                       progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
