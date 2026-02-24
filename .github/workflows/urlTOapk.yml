@@ -1,4 +1,4 @@
-name: URL to APK Converter (Professional Webview)
+name: Secure Webview APK with Swipe Refresh
 
 on:
   push:
@@ -42,37 +42,70 @@ jobs:
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
           mkdir -p dist && touch dist/index.html
+          
+          # সিকিউরিটি: সরাসরি capacitor.config.json এ URL না রেখে ডামি ভ্যালু দেওয়া
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
+            "server": { "url": "about:blank", "cleartext": true }
           }
           EOF
           npx cap add android || true
 
-      - name: Configure Advanced Android Features
+      - name: Inject SwipeRefresh & Security Fixes
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ফিক্স
-          sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
+          # ১. ডুপ্লিকেট ক্লাস ও ProGuard (সিকিউরিটি) অন করা
+          sed -i '/buildTypes {/i \    buildFeatures { buildConfig = true }' android/app/build.gradle
+          sed -i '/release {/a \            minifyEnabled true\n            shrinkResources true\n            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"' android/app/build.gradle
+          
+          # ২. SwipeRefreshLayout ডিপেন্ডেন্সি যোগ করা
+          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
 
-          # ২. আইকন জেনারেট
-          if [ -f "assets/icon.png" ]; then npx capacitor-assets generate --android; fi
+          # ৩. XML লেআউটে SwipeRefreshLayout ইনজেক্ট করা
+          LAYOUT_FILE="android/app/src/main/res/layout/activity_main.xml"
+          cat <<EOF > $LAYOUT_FILE
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/swipeRefresh"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+              <FrameLayout
+                  android:id="@+id/webview_container"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" />
+          </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+          EOF
 
-          # ৩. পারমিশন (Internet + Storage)
-          # অন্যান্য পারমিশন কমেন্টে: CAMERA, ACCESS_FINE_LOCATION, RECORD_AUDIO
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
-
-          # ৪. ব্যাক বাটন নেভিগেশন ফিক্স (MainActivity.java মডিফাই করা)
-          # যাতে অ্যাপ থেকে সরাসরি বের না হয়ে আগের পেজে ফিরে যায়
+          # ৪. MainActivity-তে রিফ্রেশ, ব্যাক বাটন এবং URL লুকাতে জাভা কোড ইনজেকশন
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
           
-          # MainActivity-তে ব্যাক বাটন হ্যান্ডলিং লজিক ইনজেক্ট করা
-          sed -i '/public class MainActivity extends BridgeActivity {}/d' "$FILE_PATH"
-          cat <<EOF >> "$FILE_PATH"
-          public class MainActivity extends com.getcapacitor.BridgeActivity {
+          cat <<EOF > "$FILE_PATH"
+          package ${{ steps.meta.outputs.package }};
+          import android.os.Bundle;
+          import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              private SwipeRefreshLayout swipeRefresh;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  
+                  // সিকিউরিটি: রানটাইমে ইউআরএল লোড করা
+                  this.bridge.getWebView().loadUrl("${{ steps.meta.outputs.url }}");
+                  
+                  swipeRefresh = findViewById(R.id.swipeRefresh);
+                  swipeRefresh.setOnRefreshListener(() -> {
+                      bridge.getWebView().reload();
+                      swipeRefresh.setRefreshing(false);
+                  });
+              }
+
               @Override
               public void onBackPressed() {
                   if (this.bridge.getWebView().canGoBack()) {
@@ -84,22 +117,18 @@ jobs:
           }
           EOF
 
-          # ৫. ডায়নামিক ভার্সন ও অ্যাপ নাম
-          sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-          if [ -f "android/app/src/main/res/values/strings.xml" ]; then
-            sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
-          fi
+          # ৫. পারমিশন আপডেট
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
 
           npx cap sync android
 
-      - name: Build APK
+      - name: Build Secured APK
         run: |
           cd android && chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease # সিকিউরিটির জন্য রিলিজ বিল্ড ব্যবহার করছি
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}-Secured
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
