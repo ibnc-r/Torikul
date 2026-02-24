@@ -1,4 +1,4 @@
-name: Stable Webview APK with Swipe Refresh
+name: URL to APK Converter (Professional Webview)
 
 on:
   push:
@@ -52,23 +52,39 @@ jobs:
           EOF
           npx cap add android || true
 
-      - name: Configure Features (Back Button & Swipe Refresh)
+      - name: Configure Advanced Android Features
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ফিক্স ও SwipeRefresh লাইব্রেরি যুক্ত করা
-          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
+          # ১. ডুপ্লিকেট ক্লাস ফিক্স
           sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
           # ২. আইকন জেনারেট
           if [ -f "assets/icon.png" ]; then npx capacitor-assets generate --android; fi
 
-          # ৩. পারমিশন
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+          # ৩. পারমিশন এবং ডিপেন্ডেন্সি (SwipeRefreshLayout এর জন্য)
+          sed -i '/implementation "com.getcapacitor:android/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
 
-          # ৪. MainActivity-তে ব্যাক বাটন ও সোয়াইপ রিফ্রেশ ইনজেক্ট করা
+          # ৪. Layout এ SwipeRefreshLayout যুক্ত করা
+          LAYOUT_FILE="android/app/src/main/res/layout/activity_main.xml"
+          mkdir -p android/app/src/main/res/layout
+          cat <<EOF > "$LAYOUT_FILE"
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/swipe_container"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+              <WebView
+                  android:id="@+id/webview"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" />
+          </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+          EOF
+
+          # ৫. MainActivity.java আপডেট (Back Button + Swipe to Refresh)
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
           
-          # ফ্রেশ MainActivity তৈরি
           cat <<EOF > "$FILE_PATH"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
@@ -77,23 +93,33 @@ jobs:
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
+              private SwipeRefreshLayout swipeRefreshLayout;
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  
-                  // ১ সেকেন্ড পর পর চেক করবে সোয়াইপ রিফ্রেশ করা হয়েছে কি না
-                  // এটি ডিফল্ট ওয়েবভিউ কন্টেইনারে রিফ্রেশার অ্যাড করবে
-                  final SwipeRefreshLayout swipeRefreshLayout = new SwipeRefreshLayout(this);
-                  swipeRefreshLayout.addView(this.bridge.getWebView());
-                  setContentView(swipeRefreshLayout);
+              }
 
-                  swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                      @Override
-                      public void onRefresh() {
-                          bridge.getWebView().reload();
-                          swipeRefreshLayout.setRefreshing(false);
-                      }
-                  });
+              @Override
+              public void onResume() {
+                  super.onResume();
+                  WebView webView = this.bridge.getWebView();
+                  swipeRefreshLayout = findViewById(R.id.swipe_container);
+
+                  if (swipeRefreshLayout != null && webView != null) {
+                      swipeRefreshLayout.setOnRefreshListener(() -> {
+                          webView.reload();
+                      });
+
+                      // যখন পেজ লোড শেষ হবে তখন রিফ্রেশ এনিমেশন বন্ধ হবে
+                      webView.setWebViewClient(new com.getcapacitor.BridgeWebViewClient(this.bridge) {
+                          @Override
+                          public void onPageFinished(WebView view, String url) {
+                              super.onPageFinished(view, url);
+                              swipeRefreshLayout.setRefreshing(false);
+                          }
+                      });
+                  }
               }
 
               @Override
@@ -107,10 +133,13 @@ jobs:
           }
           EOF
 
-          # ৫. ডায়নামিক ভার্সন ও নাম আপডেট
+          # ৬. ভার্সন ও অ্যাপ নাম ফিক্স
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-          
+          if [ -f "android/app/src/main/res/values/strings.xml" ]; then
+            sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
+          fi
+
           npx cap sync android
 
       - name: Build APK
