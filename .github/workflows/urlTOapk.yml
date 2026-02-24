@@ -1,4 +1,4 @@
-name: Secure Webview APK with Swipe Refresh
+name: Professional Secure Webview APK
 
 on:
   push:
@@ -42,8 +42,6 @@ jobs:
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
           mkdir -p dist && touch dist/index.html
-          
-          # সিকিউরিটি: সরাসরি capacitor.config.json এ URL না রেখে ডামি ভ্যালু দেওয়া
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
@@ -54,18 +52,48 @@ jobs:
           EOF
           npx cap add android || true
 
-      - name: Inject SwipeRefresh & Security Fixes
+      - name: Inject Professional Features & Security
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ও ProGuard (সিকিউরিটি) অন করা
-          sed -i '/buildTypes {/i \    buildFeatures { buildConfig = true }' android/app/build.gradle
-          sed -i '/release {/a \            minifyEnabled true\n            shrinkResources true\n            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"' android/app/build.gradle
-          
-          # ২. SwipeRefreshLayout ডিপেন্ডেন্সি যোগ করা
-          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
+          # ১. build.gradle কনফিগারেশন (Security & SwipeRefresh Library)
+          # এখানে সরাসরি ফাইল রাইট করা হচ্ছে যাতে ভুল না হয়
+          cat <<EOF > android/app/build.gradle
+          apply plugin: 'com.android.application'
 
-          # ৩. XML লেআউটে SwipeRefreshLayout ইনজেক্ট করা
-          LAYOUT_FILE="android/app/src/main/res/layout/activity_main.xml"
-          cat <<EOF > $LAYOUT_FILE
+          android {
+              namespace "${{ steps.meta.outputs.package }}"
+              compileSdk 34
+              defaultConfig {
+                  applicationId "${{ steps.meta.outputs.package }}"
+                  minSdk 22
+                  targetSdk 34
+                  versionCode ${{ steps.meta.outputs.code }}
+                  versionName "${{ steps.meta.outputs.version }}"
+                  testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+              }
+              buildFeatures { buildConfig = true }
+              buildTypes {
+                  release {
+                      minifyEnabled true
+                      shrinkResources true
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+          }
+
+          dependencies {
+              implementation fileTree(dir: 'libs', include: ['*.jar'])
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+              implementation project(':capacitor-android')
+              constraints {
+                  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")
+                  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+              }
+          }
+          EOF
+
+          # ২. Layout ফাইলে SwipeRefreshLayout যোগ করা
+          cat <<EOF > android/app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
               xmlns:android="http://schemas.android.com/apk/res/android"
@@ -79,7 +107,7 @@ jobs:
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৪. MainActivity-তে রিফ্রেশ, ব্যাক বাটন এবং URL লুকাতে জাভা কোড ইনজেকশন
+          # ৩. MainActivity-তে জাভা কোড ইনজেক্ট করা (Refresh, Back Button, URL Hidden)
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
           
@@ -96,7 +124,7 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   
-                  // সিকিউরিটি: রানটাইমে ইউআরএল লোড করা
+                  // ইউআরএল লোড করা
                   this.bridge.getWebView().loadUrl("${{ steps.meta.outputs.url }}");
                   
                   swipeRefresh = findViewById(R.id.swipeRefresh);
@@ -117,18 +145,18 @@ jobs:
           }
           EOF
 
-          # ৫. পারমিশন আপডেট
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+          # ৪. পারমিশন আপডেট
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
 
           npx cap sync android
 
-      - name: Build Secured APK
+      - name: Build Secured Release APK
         run: |
           cd android && chmod +x gradlew
-          ./gradlew assembleRelease # সিকিউরিটির জন্য রিলিজ বিল্ড ব্যবহার করছি
+          ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}-Secured
+          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}-Secure
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
