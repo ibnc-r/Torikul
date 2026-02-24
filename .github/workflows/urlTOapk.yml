@@ -54,17 +54,20 @@ jobs:
 
       - name: Configure Advanced Android Features
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ফিক্স
+          # ১. SwipeRefreshLayout ডিপেন্ডেন্সি যোগ করা
+          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
+          
+          # ২. ডুপ্লিকেট ক্লাস ফিক্স
           sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # ২. আইকন জেনারেট
+          # ৩. আইকন জেনারেট
           if [ -f "assets/icon.png" ]; then npx capacitor-assets generate --android; fi
 
-          # ৩. পারমিশন এবং ডিপেন্ডেন্সি (SwipeRefreshLayout এর জন্য)
-          sed -i '/implementation "com.getcapacitor:android/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+          # ৪. পারমিশন ঠিক করা (ডুপ্লিকেট রিমুভ করে ফ্রেশ ভাবে অ্যাড)
+          sed -i '/<uses-permission/d' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
 
-          # ৪. Layout এ SwipeRefreshLayout যুক্ত করা
+          # ৫. Layout এ SwipeRefreshLayout যুক্ত করা
           LAYOUT_FILE="android/app/src/main/res/layout/activity_main.xml"
           mkdir -p android/app/src/main/res/layout
           cat <<EOF > "$LAYOUT_FILE"
@@ -74,14 +77,14 @@ jobs:
               android:id="@+id/swipe_container"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
-              <WebView
-                  android:id="@+id/webview"
+              <FrameLayout
+                  android:id="@+id/webview_container"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent" />
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৫. MainActivity.java আপডেট (Back Button + Swipe to Refresh)
+          # ৬. MainActivity.java আপডেট (Back Button + Swipe to Refresh)
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
           
@@ -103,15 +106,17 @@ jobs:
               @Override
               public void onResume() {
                   super.onResume();
-                  WebView webView = this.bridge.getWebView();
+                  final WebView webView = this.bridge.getWebView();
                   swipeRefreshLayout = findViewById(R.id.swipe_container);
 
                   if (swipeRefreshLayout != null && webView != null) {
-                      swipeRefreshLayout.setOnRefreshListener(() -> {
-                          webView.reload();
+                      swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                          @Override
+                          public void onRefresh() {
+                              webView.reload();
+                          }
                       });
 
-                      // যখন পেজ লোড শেষ হবে তখন রিফ্রেশ এনিমেশন বন্ধ হবে
                       webView.setWebViewClient(new com.getcapacitor.BridgeWebViewClient(this.bridge) {
                           @Override
                           public void onPageFinished(WebView view, String url) {
@@ -133,7 +138,7 @@ jobs:
           }
           EOF
 
-          # ৬. ভার্সন ও অ্যাপ নাম ফিক্স
+          # ৭. ভার্সন ও অ্যাপ নাম ফিক্স
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
           if [ -f "android/app/src/main/res/values/strings.xml" ]; then
