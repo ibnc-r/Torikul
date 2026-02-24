@@ -39,59 +39,58 @@ jobs:
           mkdir -p dist && echo "<html></html>" > dist/index.html
           npx cap init "${{ steps.meta.outputs.name }}" "${{ steps.meta.outputs.package }}" --web-dir dist
           npx cap add android
+          
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true },
-            "plugins": {
-              "SplashScreen": {
-                "launchShowDuration": 2000,
-                "backgroundColor": "#ffffff",
-                "showSpinner": false,
-                "androidScaleType": "CENTER_CROP"
-              }
-            }
+            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
           }
           EOF
           npx cap copy android
 
-      - name: Branding & Splash Fix
+      - name: Branding & Assets
         run: |
-          # আইকন জেনারেশন
+          # ১. আইকন জেনারেশন
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
 
-          # ১. SVG-কে স্প্ল্যাশ স্ক্রিন হিসেবে সেভ করা
+          # ২. SVG স্প্ল্যাশ স্ক্রিন (Vector Drawable এ রূপান্তর)
           mkdir -p android/app/src/main/res/drawable
-          cat <<EOF > android/app/src/main/res/drawable/ic_splash.xml
+          cat <<EOF > android/app/src/main/res/drawable/ic_splash_logo.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="320dp"
               android:height="320dp"
               android:viewportWidth="320"
               android:viewportHeight="320">
-              <path android:fillColor="#FFA500" android:pathData="M160,160m-140,0a140,140 0,1 1,280 0a140,140 0,1 1,-280 0" />
-              <path android:fillColor="#FFFFFF" android:pathData="M130,120h60v80h-60z" />
+              <path android:fillColor="#FFD700" android:pathData="M160,160m-140,0a140,140 0,1 1,280 0a140,140 0,1 1,-280 0"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M100,140h120v40h-120z"/>
           </vector>
           EOF
 
-          # ২. অ্যান্ড্রয়েড থিম ফিক্স (স্প্ল্যাশ স্ক্রিন দেখানোর জন্য)
+          # ৩. Theme Fix (ম্যানিফেস্ট এরর সমাধানের জন্য সঠিক স্টাইল নাম ব্যবহার)
           cat <<EOF > android/app/src/main/res/values/styles.xml
+          <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-                  <item name="android:windowBackground">@drawable/ic_splash</item>
+                  <item name="android:windowBackground">@drawable/ic_splash_logo</item>
+              </style>
+              <style name="AppTheme.NoActionBarLaunch" parent="AppTheme">
+                  <item name="android:windowBackground">@drawable/ic_splash_logo</item>
               </style>
           </resources>
           EOF
 
       - name: Professional Optimization
         run: |
+          # Kotlin Duplicate ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
+          # MainActivity লজিক (Refresh + Back Button)
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -137,6 +136,7 @@ jobs:
           }
           EOF
 
+          # ভার্সন সিঙ্ক
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
