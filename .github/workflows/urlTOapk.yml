@@ -1,4 +1,4 @@
-name: URL to APK Converter (Fixed & Permissions)
+name: URL to APK Converter (Professional Webview)
 
 on:
   push:
@@ -21,13 +21,11 @@ jobs:
       - name: Extract Metadata
         id: meta
         run: |
-          # assets/url-metadata.json থেকে ডেটা রিড করা
           APP_NAME=$(jq -r '.appName' assets/url-metadata.json)
           APP_PKG=$(jq -r '.appPackage' assets/url-metadata.json)
           APP_URL=$(jq -r '.appUrl' assets/url-metadata.json)
           APP_VER=$(jq -r '.versionName' assets/url-metadata.json)
           APP_CODE=$(jq -r '.versionCode' assets/url-metadata.json)
-          
           echo "name=$APP_NAME" >> $GITHUB_OUTPUT
           echo "package=$APP_PKG" >> $GITHUB_OUTPUT
           echo "url=$APP_URL" >> $GITHUB_OUTPUT
@@ -44,42 +42,49 @@ jobs:
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
           mkdir -p dist && touch dist/index.html
-          
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": {
-              "url": "${{ steps.meta.outputs.url }}",
-              "cleartext": true
-            }
+            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
           }
           EOF
-          
           npx cap add android || true
 
-      - name: Configure Permissions & Fixed Kotlin Conflict
+      - name: Configure Advanced Android Features
         run: |
-          # ১. ডুপ্লিকেট ক্লাস এরর ফিক্স (Kotlin Conflict Fix)
-          # build.gradle এ constraints যোগ করা হচ্ছে যাতে সব লাইব্রেরি একই Kotlin ভার্সন পায়
+          # ১. ডুপ্লিকেট ক্লাস ফিক্স
           sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
           # ২. আইকন জেনারেট
-          if [ -f "assets/icon.png" ]; then
-            npx capacitor-assets generate --android
-          fi
+          if [ -f "assets/icon.png" ]; then npx capacitor-assets generate --android; fi
 
-          # ৩. পারমিশন ম্যানেজমেন্ট (AndroidManifest.xml)
-          # ইন্টারনেটের পাশাপাশি স্টোরেজ রিড এবং রাইট পারমিশন যোগ করা
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
+          # ৩. পারমিশন (Internet + Storage)
+          # অন্যান্য পারমিশন কমেন্টে: CAMERA, ACCESS_FINE_LOCATION, RECORD_AUDIO
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+
+          # ৪. ব্যাক বাটন নেভিগেশন ফিক্স (MainActivity.java মডিফাই করা)
+          # যাতে অ্যাপ থেকে সরাসরি বের না হয়ে আগের পেজে ফিরে যায়
+          PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
+          FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
           
-          # নোট: আরও পারমিশন যোগ করতে চাইলে উপরের লাইনে একইভাবে নিচের মতো কোড যুক্ত করতে পারেন:
-          # ক্যামেরা: <uses-permission android:name="android.permission.CAMERA" />
-          # লোকেশন: <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-          # মাইক্রোফোন: <uses-permission android:name="android.permission.RECORD_AUDIO" />
+          # MainActivity-তে ব্যাক বাটন হ্যান্ডলিং লজিক ইনজেক্ট করা
+          sed -i '/public class MainActivity extends BridgeActivity {}/d' "$FILE_PATH"
+          cat <<EOF >> "$FILE_PATH"
+          public class MainActivity extends com.getcapacitor.BridgeActivity {
+              @Override
+              public void onBackPressed() {
+                  if (this.bridge.getWebView().canGoBack()) {
+                      this.bridge.getWebView().goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+          }
+          EOF
 
-          # ৪. ডায়নামিক ভার্সন এবং নাম সেট করা
+          # ৫. ডায়নামিক ভার্সন ও অ্যাপ নাম
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
           if [ -f "android/app/src/main/res/values/strings.xml" ]; then
@@ -90,8 +95,7 @@ jobs:
 
       - name: Build APK
         run: |
-          cd android
-          chmod +x gradlew
+          cd android && chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
