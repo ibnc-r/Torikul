@@ -59,13 +59,11 @@ jobs:
 
       - name: Branding & Error Page Download
         run: |
-          # আইকন জেনারেশন
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
-          
-          # কাস্টম এরর পেজ ডাউনলোড এবং সঠিক জায়গায় স্থাপন
+          # Error Page Download
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
@@ -74,7 +72,7 @@ jobs:
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity - কাস্টম এরর পেজ লজিক সহ
+          # MainActivity - জাভা কম্পাইল এরর মুক্ত লজিক
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -92,13 +90,6 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
-              private String mainUrl;
-
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  mainUrl = "${{ steps.meta.outputs.url }}";
-              }
 
               @Override
               public void onStart() {
@@ -138,17 +129,13 @@ jobs:
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
                               
-                              getBridge().executeOnMainThread(() -> {
-                                  if (getBridge().getPlugin("SplashScreen") != null) {
-                                      getBridge().getPlugin("SplashScreen").getInstance().hide(null);
-                                  }
-                              });
+                              // Java-তে প্লাগইন কল না করে সরাসরি JS ইনজেকশন (এরর মুক্ত)
+                              view.evaluateJavascript("if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) { window.Capacitor.Plugins.SplashScreen.hide(); }", null);
                           }
 
                           @Override
                           public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                               if (request.isForMainFrame()) {
-                                  // কানেকশন এরর হলে লোকাল error.html লোড হবে
                                   view.loadUrl("file:///android_asset/public/error.html");
                               }
                           }
@@ -159,8 +146,8 @@ jobs:
               @Override
               public void onBackPressed() {
                   WebView webView = getBridge().getWebView();
-                  if (webView.getUrl().contains("error.html")) {
-                      webView.loadUrl(mainUrl); // এরর পেজে থাকাকালীন ব্যাক চাপলে আবার মেইন ইউআরএল ট্রাই করবে
+                  if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
+                      webView.loadUrl("${{ steps.meta.outputs.url }}");
                   } else if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
