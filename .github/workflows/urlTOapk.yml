@@ -50,8 +50,7 @@ jobs:
                 "launchAutoHide": true,
                 "launchShowDuration": 3000,
                 "backgroundColor": "#ffffff",
-                "androidScaleType": "CENTER_CROP",
-                "showSpinner": true
+                "androidScaleType": "CENTER_CROP"
               }
             }
           }
@@ -67,10 +66,10 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
-      - name: Professional Optimization
+      - name: Professional Optimization (UI Fix for Android 14/15)
         run: |
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
-          sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
+          sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    implementation("androidx.core:core:1.12.0")' android/app/build.gradle
 
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
@@ -84,6 +83,8 @@ jobs:
           import android.webkit.WebView;
           import android.widget.ProgressBar;
           import android.widget.RelativeLayout;
+          import androidx.core.view.ViewCompat;
+          import androidx.core.view.WindowInsetsCompat;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
           import com.getcapacitor.BridgeWebViewClient;
@@ -114,13 +115,19 @@ jobs:
                       progressBar.setIndeterminate(true);
                       progressBar.setVisibility(View.GONE);
                       
-                      RelativeLayout layout = new RelativeLayout(this);
+                      final RelativeLayout layout = new RelativeLayout(this);
                       layout.addView(swipe);
                       layout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 20));
+
+                      // Android 14/15 Status Bar Padding Fix
+                      ViewCompat.setOnApplyWindowInsetsListener(layout, (v, windowInsets) -> {
+                          int statusBarHeight = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+                          v.setPadding(0, statusBarHeight, 0, 0);
+                          return windowInsets;
+                      });
                       
                       parent.addView(layout, index);
 
-                      // স্মার্ট রিফ্রেশ: এরর পেজে থাকলেও শেষ ইউআরএল-এ ফিরে যাবে
                       swipe.setOnRefreshListener(() -> {
                           if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
                               webView.loadUrl(lastAttemptedUrl);
@@ -134,7 +141,6 @@ jobs:
                           public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                               super.onPageStarted(view, url, favicon);
                               progressBar.setVisibility(View.VISIBLE);
-                              // এরর পেজ বাদে অন্য সব ভ্যালিড ইউআরএল সেভ করে রাখা হচ্ছে
                               if (!url.contains("error.html")) {
                                   lastAttemptedUrl = url;
                               }
@@ -147,7 +153,6 @@ jobs:
                               progressBar.setVisibility(View.GONE);
                               view.evaluateJavascript("window.Capacitor.Plugins.SplashScreen.hide()", null);
                               
-                              // 'Try Again' বাটনের জন্য স্মার্ট জাভাস্ক্রিপ্ট ইনজেকশন
                               if (url.contains("error.html")) {
                                   view.evaluateJavascript(
                                       "var btn = document.querySelector('button') || document.querySelector('a');" +
