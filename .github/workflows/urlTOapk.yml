@@ -66,18 +66,28 @@ jobs:
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
-      - name: Professional Optimization (UI Fix for Android 14/15)
+      - name: Fix Duplicate Classes & UI Dependencies
         run: |
-          echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
-          sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    implementation("androidx.core:core:1.12.0")' android/app/build.gradle
+          # ডুপ্লিকেট ক্লাস এরর ফিক্স করার জন্য স্টাইল শিট আপডেট
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          
+          # build.gradle আপডেট - ডুপ্লিকেট কোটলিন লাইব্রেরি রিমুভ এবং UI লাইব্রেরি যোগ
+          sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    implementation("androidx.core:core-ktx:1.12.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
+      - name: Ultimate Responsive UI Optimization
+        run: |
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
           
+          import android.graphics.Color;
+          import android.os.Build;
           import android.os.Bundle;
           import android.view.View;
           import android.view.ViewGroup;
+          import android.view.Window;
+          import android.view.WindowManager;
           import android.webkit.WebResourceError;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
@@ -97,6 +107,17 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   lastAttemptedUrl = "${{ steps.meta.outputs.url }}";
+                  
+                  // স্ট্যাটাস বারকে স্বচ্ছ এবং রেসপনসিভ করা (Android 13, 14, 15+)
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                      Window window = getWindow();
+                      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                      window.setStatusBarColor(Color.TRANSPARENT);
+                      // আইকন ডার্ক মোড হ্যান্ডেল করা
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                          window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                      }
+                  }
               }
 
               @Override
@@ -117,9 +138,9 @@ jobs:
                       
                       final RelativeLayout layout = new RelativeLayout(this);
                       layout.addView(swipe);
-                      layout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 20));
+                      layout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 15));
 
-                      // Android 14/15 Status Bar Padding Fix
+                      // সকল অ্যান্ড্রয়েড ভার্সনের জন্য রেসপনসিভ ইনসেট হ্যান্ডলিং
                       ViewCompat.setOnApplyWindowInsetsListener(layout, (v, windowInsets) -> {
                           int statusBarHeight = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
                           v.setPadding(0, statusBarHeight, 0, 0);
