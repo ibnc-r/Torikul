@@ -1,4 +1,4 @@
-name: Professional Secure Webview APK
+name: Secure Webview APK with Swipe Refresh
 
 on:
   push:
@@ -47,49 +47,28 @@ jobs:
             "appId": "${{ steps.meta.outputs.package }}",
             "appName": "${{ steps.meta.outputs.name }}",
             "webDir": "dist",
-            "server": { "url": "about:blank", "cleartext": true }
+            "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true }
           }
           EOF
           npx cap add android || true
 
-      - name: Inject Professional Features & Security
+      - name: Configure Advanced Features & Security
         run: |
-          # ১. build.gradle ফিক্স
-          cat <<EOF > android/app/build.gradle
-          apply plugin: 'com.android.application'
-          android {
-              namespace "${{ steps.meta.outputs.package }}"
-              compileSdk 35
-              defaultConfig {
-                  applicationId "${{ steps.meta.outputs.package }}"
-                  minSdk 23
-                  targetSdk 35
-                  versionCode ${{ steps.meta.outputs.code }}
-                  versionName "${{ steps.meta.outputs.version }}"
-                  testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-              }
-              buildFeatures { buildConfig = true }
-              buildTypes {
-                  release {
-                      minifyEnabled true
-                      shrinkResources true
-                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                  }
-              }
-          }
-          dependencies {
-              implementation fileTree(dir: 'libs', include: ['*.jar'])
-              implementation 'androidx.appcompat:appcompat:1.7.0'
-              implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-              implementation project(':capacitor-android')
-              constraints {
-                  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")
-                  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
-              }
-          }
-          EOF
+          # ১. ডুপ্লিকেট ক্লাস ফিক্স এবং রিফ্রেশ লাইব্রেরি যোগ করা
+          sed -i '/dependencies {/a \    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"' android/app/build.gradle
+          sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # ২. Layout ফাইলে SwipeRefreshLayout
+          # ২. সিকিউরিটি (Obfuscation) অন করা
+          sed -i 's/minifyEnabled false/minifyEnabled true/' android/app/build.gradle
+          sed -i '/minifyEnabled true/a \            shrinkResources true' android/app/build.gradle
+
+          # ৩. আইকন ও পারমিশন
+          if [ -f "assets/icon.png" ]; then npx capacitor-assets generate --android; fi
+          sed -i '/android.permission.INTERNET/d' android/app/src/main/AndroidManifest.xml
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+
+          # ৪. XML-এ SwipeRefreshLayout ইনজেক্ট করা
+          # মেইন অ্যাক্টিভিটি লেআউটকে রিফ্রেশ লেআউট দিয়ে মুড়িয়ে দেওয়া
           cat <<EOF > android/app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
@@ -104,21 +83,21 @@ jobs:
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৩. MainActivity জাভা কোড
+          # ৫. MainActivity জাভা কোড মডিফাই করা (Refresh + Back Button)
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           FILE_PATH="android/app/src/main/java/$PACKAGE_PATH/MainActivity.java"
+          
           cat <<EOF > "$FILE_PATH"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
+
           public class MainActivity extends BridgeActivity {
-              private SwipeRefreshLayout swipeRefresh;
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  this.bridge.getWebView().loadUrl("${{ steps.meta.outputs.url }}");
-                  swipeRefresh = findViewById(R.id.swipeRefresh);
+                  SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipeRefresh);
                   swipeRefresh.setOnRefreshListener(() -> {
                       bridge.getWebView().reload();
                       swipeRefresh.setRefreshing(false);
@@ -135,17 +114,16 @@ jobs:
           }
           EOF
 
-          # ৪. Manifest ফিক্স (স্প্ল্যাশ স্ক্রিন এরর সমাধান)
-          # থিম পরিবর্তন করে AppTheme করা হচ্ছে যা ডিফল্টভাবে থাকে
-          sed -i 's/Theme.SplashScreen/Theme.AppCompat.NoActionBar/g' android/app/src/main/AndroidManifest.xml
-          
-          # পারমিশন ক্লিনআপ
-          sed -i '/android.permission.INTERNET/d' android/app/src/main/AndroidManifest.xml
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />' android/app/src/main/AndroidManifest.xml
+          # ৬. ভার্সন ও নাম আপডেট
+          sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
+          if [ -f "android/app/src/main/res/values/strings.xml" ]; then
+            sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
+          fi
 
           npx cap sync android
 
-      - name: Build Secured Release APK
+      - name: Build Secured APK
         run: |
           cd android && chmod +x gradlew
           ./gradlew assembleRelease
