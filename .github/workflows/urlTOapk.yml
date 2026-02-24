@@ -90,7 +90,13 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
-              private String mainUrl = "${{ steps.meta.outputs.url }}";
+              private String lastAttemptedUrl;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  lastAttemptedUrl = "${{ steps.meta.outputs.url }}";
+              }
 
               @Override
               public void onStart() {
@@ -114,10 +120,10 @@ jobs:
                       
                       parent.addView(layout, index);
 
-                      // রিফ্রেশ লজিক: এরর পেজে থাকলে মেইন ইউআরএল লোড করবে
+                      // স্মার্ট রিফ্রেশ: এরর পেজে থাকলেও শেষ ইউআরএল-এ ফিরে যাবে
                       swipe.setOnRefreshListener(() -> {
                           if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
-                              webView.loadUrl(mainUrl);
+                              webView.loadUrl(lastAttemptedUrl);
                           } else {
                               webView.reload();
                           }
@@ -128,6 +134,10 @@ jobs:
                           public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                               super.onPageStarted(view, url, favicon);
                               progressBar.setVisibility(View.VISIBLE);
+                              // এরর পেজ বাদে অন্য সব ভ্যালিড ইউআরএল সেভ করে রাখা হচ্ছে
+                              if (!url.contains("error.html")) {
+                                  lastAttemptedUrl = url;
+                              }
                           }
 
                           @Override
@@ -137,11 +147,11 @@ jobs:
                               progressBar.setVisibility(View.GONE);
                               view.evaluateJavascript("window.Capacitor.Plugins.SplashScreen.hide()", null);
                               
-                              // HTML এর Try Again বাটনে ক্লিক করলে যাতে মেইন ইউআরএল লোড হয়
+                              // 'Try Again' বাটনের জন্য স্মার্ট জাভাস্ক্রিপ্ট ইনজেকশন
                               if (url.contains("error.html")) {
                                   view.evaluateJavascript(
                                       "var btn = document.querySelector('button') || document.querySelector('a');" +
-                                      "if(btn) btn.onclick = function() { window.location.href = '" + mainUrl + "'; return false; };", 
+                                      "if(btn) btn.onclick = function() { window.location.href = '" + lastAttemptedUrl + "'; return false; };", 
                                       null
                                   );
                               }
@@ -161,7 +171,7 @@ jobs:
               public void onBackPressed() {
                   WebView webView = getBridge().getWebView();
                   if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
-                      webView.loadUrl(mainUrl);
+                      webView.loadUrl(lastAttemptedUrl);
                   } else if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
