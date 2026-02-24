@@ -66,11 +66,11 @@ jobs:
 
       - name: Professional Optimization
         run: |
-          # ১. ডুপ্লিকেট ক্লাস ফিক্স
+          # ডুপ্লিকেট ক্লাস ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # ২. MainActivity (টাইপ কাস্টিং এরর ফিক্স এবং লোডিং বার সহ)
+          # MainActivity - ইমপোর্ট ছাড়াই প্লাগইন হ্যান্ডলিং (এরর ফিক্স)
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -83,7 +83,6 @@ jobs:
           import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
           import com.getcapacitor.BridgeActivity;
           import com.getcapacitor.BridgeWebViewClient;
-          import com.getcapacitor.plugin.SplashScreen;
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
@@ -109,7 +108,7 @@ jobs:
                       RelativeLayout layout = new RelativeLayout(this);
                       layout.addView(swipe);
                       layout.addView(progressBar, new RelativeLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, 24));
+                              ViewGroup.LayoutParams.MATCH_PARENT, 15));
                       
                       parent.addView(layout, index);
                       swipe.setOnRefreshListener(() -> webView.reload());
@@ -127,11 +126,12 @@ jobs:
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
                               
-                              // SplashScreen Hide Fix
-                              SplashScreen splash = (SplashScreen) getBridge().getPlugin("SplashScreen").getInstance();
-                              if (splash != null) {
-                                  splash.hide(null);
-                              }
+                              // ডায়নামিক প্লাগইন কল (কোনো ইমপোর্ট লাগবে না)
+                              getBridge().executeOnMainThread(() -> {
+                                  if (getBridge().getPlugin("SplashScreen") != null) {
+                                      getBridge().getPlugin("SplashScreen").getInstance().hide(null);
+                                  }
+                              });
                           }
                       });
                   }
@@ -148,7 +148,7 @@ jobs:
           }
           EOF
 
-          # ৩. ভার্সন সেট
+          # ভার্সন সিঙ্ক
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
