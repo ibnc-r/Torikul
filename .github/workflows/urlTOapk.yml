@@ -1,0 +1,95 @@
+name: URL to APK Converter
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Extract Metadata
+        id: meta
+        run: |
+          APP_NAME=$(jq -r '.appName' assets/url-metadata.json)
+          APP_PKG=$(jq -r '.appPackage' assets/url-metadata.json)
+          APP_URL=$(jq -r '.appUrl' assets/url-metadata.json)
+          APP_VER=$(jq -r '.versionName' assets/url-metadata.json)
+          APP_CODE=$(jq -r '.versionCode' assets/url-metadata.json)
+          
+          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "package=$APP_PKG" >> $GITHUB_OUTPUT
+          echo "url=$APP_URL" >> $GITHUB_OUTPUT
+          echo "version=$APP_VER" >> $GITHUB_OUTPUT
+          echo "code=$APP_CODE" >> $GITHUB_OUTPUT
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Initialize Capacitor for URL
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
+          # ডামি ফোল্ডার তৈরি (Capacitor এর জন্য জরুরি)
+          mkdir -p dist
+          touch dist/index.html
+          
+          # ক্যাপাসিটর কনফিগ তৈরি (সার্ভার ইউআরএল সহ)
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "${{ steps.meta.outputs.package }}",
+            "appName": "${{ steps.meta.outputs.name }}",
+            "webDir": "dist",
+            "server": {
+              "url": "${{ steps.meta.outputs.url }}",
+              "cleartext": true
+            }
+          }
+          EOF
+          
+          npx cap add android
+
+      - name: Configure Android Features (Back Button & Refresh)
+        run: |
+          # আইকন জেনারেট
+          if [ -f "assets/icon.png" ]; then
+            npx capacitor-assets generate --android
+          else
+            # আইকন না থাকলে ডিফল্ট আইকন দিয়ে রান করা
+            echo "Icon not found, using default."
+          fi
+
+          # ইন্টারনেট পারমিশন \n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
+
+          # ভার্সন আপডেট
+          sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
+
+          # অ্যাপের নাম আপডেট
+          sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
+
+          npx cap sync android
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.name }}-v${{ steps.meta.outputs.version }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
