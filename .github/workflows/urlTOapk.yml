@@ -64,7 +64,6 @@ jobs:
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
-          # Error HTML ফাইলটি ডাউনলোড করে অ্যাসেট ফোল্ডারে রাখা
           mkdir -p android/app/src/main/assets/public
           curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
@@ -91,6 +90,7 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
+              private String mainUrl = "${{ steps.meta.outputs.url }}";
 
               @Override
               public void onStart() {
@@ -113,7 +113,15 @@ jobs:
                       layout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 20));
                       
                       parent.addView(layout, index);
-                      swipe.setOnRefreshListener(() -> webView.reload());
+
+                      // রিফ্রেশ লজিক: এরর পেজে থাকলে মেইন ইউআরএল লোড করবে
+                      swipe.setOnRefreshListener(() -> {
+                          if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
+                              webView.loadUrl(mainUrl);
+                          } else {
+                              webView.reload();
+                          }
+                      });
                       
                       webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
                           @Override
@@ -128,11 +136,19 @@ jobs:
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
                               view.evaluateJavascript("window.Capacitor.Plugins.SplashScreen.hide()", null);
+                              
+                              // HTML এর Try Again বাটনে ক্লিক করলে যাতে মেইন ইউআরএল লোড হয়
+                              if (url.contains("error.html")) {
+                                  view.evaluateJavascript(
+                                      "var btn = document.querySelector('button') || document.querySelector('a');" +
+                                      "if(btn) btn.onclick = function() { window.location.href = '" + mainUrl + "'; return false; };", 
+                                      null
+                                  );
+                              }
                           }
 
                           @Override
                           public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                              // যদি মেইন ফ্রেম লোড হতে এরর হয় (ইন্টারনেট না থাকে)
                               if (request.isForMainFrame()) {
                                   view.loadUrl("file:///android_asset/public/error.html");
                               }
@@ -145,7 +161,7 @@ jobs:
               public void onBackPressed() {
                   WebView webView = getBridge().getWebView();
                   if (webView.getUrl() != null && webView.getUrl().contains("error.html")) {
-                      webView.loadUrl("${{ steps.meta.outputs.url }}");
+                      webView.loadUrl(mainUrl);
                   } else if (webView.canGoBack()) {
                       webView.goBack();
                   } else {
