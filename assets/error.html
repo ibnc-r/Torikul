@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connection Error</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
+      font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;
+      padding: 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Animated Background - Moving Particles */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                  radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: particleDrift 20s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Additional floating orbs */
+    .bg-orb {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle at center, rgba(100, 150, 255, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      filter: blur(40px);
+      animation: orbFloat 15s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+
+    .orb-1 {
+      top: -100px;
+      left: -100px;
+      background: radial-gradient(circle at center, rgba(150, 100, 255, 0.15) 0%, transparent 80%);
+      animation-duration: 18s;
+    }
+
+    .orb-2 {
+      bottom: -150px;
+      right: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle at center, rgba(255, 150, 100, 0.1) 0%, transparent 80%);
+      animation-duration: 25s;
+      animation-delay: -5s;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      max-width: 700px;
+      width: 100%;
+      text-align: center;
+      padding: 2rem 1.5rem;
+      background: rgba(20, 20, 35, 0.6);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 3rem 1.5rem 3rem 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    /* SVG Character Container */
+    .character-wrapper {
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
+      transform-style: preserve-3d;
+      animation: characterFloat 4s ease-in-out infinite;
+    }
+
+    svg {
+      width: 240px;
+      height: 240px;
+      max-width: 80%;
+      display: inline-block;
+    }
+
+    /* Text Styles */
+    h1 {
+      font-size: clamp(3.5rem, 15vw, 7rem);
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff8e7, #c0d0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 2px 10px rgba(90, 120, 255, 0.3), 0 0 20px rgba(70, 130, 255, 0.2);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      animation: textGlow 3s ease-in-out infinite alternate;
+    }
+
+    .subtitle {
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      font-weight: 500;
+      background: linear-gradient(135deg, #aaaaff, #88aaff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 1rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .description {
+      font-size: clamp(1rem, 3vw, 1.25rem);
+      color: rgba(220, 225, 255, 0.8);
+      margin-bottom: 2.5rem;
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 1.5rem;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .retry-button {
+      background: linear-gradient(145deg, #2c2c4a, #1a1a30);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #eef5ff;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 1rem 2.5rem;
+      border-radius: 60px 20px 60px 20px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+      letter-spacing: 1px;
+      backdrop-filter: blur(5px);
+      outline: none;
+      border: none;
+      font-family: inherit;
+      animation: buttonPulse 2s infinite alternate;
+    }
+
+    .retry-button:hover {
+      background: linear-gradient(145deg, #3a3a62, #22223c);
+      transform: scale(1.05) translateY(-3px);
+      border-radius: 30px 60px 30px 60px;
+      box-shadow: 0 18px 30px -10px black;
+      color: white;
+    }
+
+    .retry-button:active {
+      transform: scale(0.98) translateY(2px);
+      box-shadow: 0 5px 15px -5px black;
+    }
+
+    /* Animations */
+    @keyframes particleDrift {
+      0% { background-position: 0 0; }
+      100% { background-position: 100px 100px; }
+    }
+
+    @keyframes orbFloat {
+      0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+      100% { transform: translate(40px, 40px) scale(1.2); opacity: 0.8; }
+    }
+
+    @keyframes characterFloat {
+      0% { transform: translateY(0px) rotate(0deg); }
+      25% { transform: translateY(-8px) rotate(-1deg); }
+      75% { transform: translateY(8px) rotate(1deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    @keyframes textGlow {
+      0% { text-shadow: 0 2px 15px rgba(100, 140, 255, 0.3), 0 0 30px rgba(70, 100, 255, 0.2); }
+      100% { text-shadow: 0 2px 25px rgba(140, 180, 255, 0.6), 0 0 50px rgba(100, 150, 255, 0.4); }
+    }
+
+    @keyframes buttonPulse {
+      0% { box-shadow: 0 5px 15px -5px rgba(0, 0, 0, 0.7), 0 0 0 0 rgba(90, 130, 255, 0.3); }
+      100% { box-shadow: 0 10px 25px -5px black, 0 0 20px 5px rgba(90, 130, 255, 0.2); }
+    }
+
+    /* Additional decorative line */
+    .glow-line {
+      width: 150px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(170, 200, 255, 0.5), transparent);
+      margin: 0.8rem auto 1.5rem;
+      border-radius: 50%;
+      animation: lineWidth 3s infinite alternate;
+    }
+
+    @keyframes lineWidth {
+      0% { width: 80px; opacity: 0.3; }
+      100% { width: 200px; opacity: 1; }
+    }
+
+    footer {
+      margin-top: 2rem;
+      color: rgba(255, 255, 255, 0.2);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <div class="container">
+    <div class="character-wrapper">
+      <!-- Animated SVG Character (No Internet / Error Mascot) -->
+      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background Circle (glow) -->
+        <circle cx="100" cy="100" r="85" fill="url(#gradBg)" opacity="0.3" />
+        <defs>
+          <linearGradient id="gradBg" x1="30" y1="30" x2="170" y2="170" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#6688ff" />
+            <stop offset="1" stop-color="#aa88ff" />
+          </linearGradient>
+        </defs>
+
+        <!-- Main Character Face / Robot-like (No Internet Connection) -->
+        <circle cx="100" cy="100" r="70" fill="#1f1f3a" stroke="url(#gradOutline)" stroke-width="4" />
+        <defs>
+          <linearGradient id="gradOutline" x1="20" y1="20" x2="180" y2="180">
+            <stop stop-color="#9ab0ff" />
+            <stop offset="1" stop-color="#6b8cff" />
+          </linearGradient>
+        </defs>
+
+        <!-- Eyes with animation (looking around) -->
+        <circle cx="70" cy="80" r="12" fill="#ffffff" />
+        <circle cx="130" cy="80" r="12" fill="#ffffff" />
+        <!-- Pupils (animated) -->
+        <circle cx="74" cy="83" r="6" fill="#223344">
+          <animate attributeName="cx" values="74;72;76;74" dur="4s" repeatCount="indefinite" />
+          <animate attributeName="cy" values="83;81;85;83" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="126" cy="83" r="6" fill="#223344">
+          <animate attributeName="cx" values="126;124;128;126" dur="4.2s" repeatCount="indefinite" />
+          <animate attributeName="cy" values="83;81;85;83" dur="3.8s" repeatCount="indefinite" />
+        </circle>
+
+        <!-- Sad/Concerned Mouth (curved line) with animation -->
+        <path d="M70 130 Q 100 115, 130 130" stroke="#ffaaaa" stroke-width="5" stroke-linecap="round" fill="none">
+          <animate attributeName="d" values="M70 130 Q 100 115, 130 130; M70 135 Q 100 120, 130 135; M70 130 Q 100 115, 130 130" dur="3s" repeatCount="indefinite" />
+        </path>
+
+        <!-- Wifi / Signal icon with cut lines (indicating no connection) -->
+        <path d="M70 160 L 90 140 L 110 140 L 130 160" stroke="#ff9977" stroke-width="4" stroke-dasharray="6 6" fill="none">
+          <animate attributeName="stroke-dashoffset" values="0;20;0" dur="2s" repeatCount="indefinite" />
+        </path>
+        <!-- Small cross mark (x) near the signal to emphasize no internet -->
+        <path d="M150 50 L 170 70 M170 50 L 150 70" stroke="#ff6666" stroke-width="4" stroke-linecap="round" opacity="0.9">
+          <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite" />
+        </path>
+
+        <!-- Floating dots around (connection lost indication) -->
+        <circle cx="40" cy="40" r="3" fill="#88aaff">
+          <animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="170" cy="160" r="4" fill="#88aaff">
+          <animate attributeName="opacity" values="0.2;0.8;0.2" dur="2.3s" repeatCount="indefinite" />
+          <animate attributeName="r" values="3;5;3" dur="2.3s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="180" cy="40" r="3" fill="#88aaff">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+
+        <!-- Antennas / Mechanical detail (just for style) -->
+        <line x1="100" y1="20" x2="100" y2="35" stroke="#b0c4ff" stroke-width="3" stroke-linecap="round" />
+        <circle cx="100" cy="15" r="6" fill="#b0c4ff" />
+        <!-- Sweat drop or signal lost indication (animated) -->
+        <path d="M150 100 L 165 105 L 155 120" stroke="#aaccff" stroke-width="3" fill="none" opacity="0.5">
+          <animate attributeName="opacity" values="0.2;0.7;0.2" dur="2.2s" repeatCount="indefinite" />
+        </path>
+      </svg>
+    </div>
+
+    <h1>Oops!</h1>
+    <div class="glow-line"></div>
+    <div class="subtitle">Connection Lost</div>
+    <p class="description">
+      The internet seems to have wandered off.<br />
+      Please check your connection and try again.
+    </p>
+
+    <button class="retry-button" onclick="window.location.reload()">
+      ⟳  Try Again
+    </button>
+
+    <footer>
+      <span>✦  no signal  ✦</span>
+    </footer>
+  </div>
+
+  <script>
+    // Optional: Add a small effect on button (haptic feel or just reload)
+    document.querySelector('.retry-button').addEventListener('click', function(e) {
+      // subtle animation is already in css, but we can add a little extra
+      this.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        this.style.transform = '';
+      }, 150);
+      // Actually reload is handled by onclick, but if you want a custom check you can modify
+      // This simply reloads the page as a retry.
+    });
+  </script>
+</body>
+</html>
