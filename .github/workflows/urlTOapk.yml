@@ -35,12 +35,16 @@ jobs:
 
       - name: Scaffold Native Android Project
         run: |
-          # অ্যান্ড্রয়েড প্রজেক্ট স্ট্রাকচার তৈরি
+          # ১. প্রজেক্ট ফোল্ডার তৈরি
           mkdir -p app/src/main/java/$(echo ${{ steps.meta.outputs.package }} | sed 's/\./\//g')
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/mipmap-mdpi
 
-          # ১. build.gradle তৈরি
+          # ২. settings.gradle তৈরি (এটিই মিসিং ছিল)
+          echo "include ':app'" > settings.gradle
+
+          # ৩. রুট build.gradle তৈরি
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -49,7 +53,7 @@ jobs:
           allprojects { repositories { google(); mavenCentral() } }
           EOF
 
-          # ২. app/build.gradle তৈরি
+          # ৪. app/build.gradle তৈরি
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
@@ -72,18 +76,16 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-              implementation 'androidx.webkit:webkit:1.9.0'
           }
           EOF
 
-          # ৩. AndroidManifest.xml (Internet permission সহ)
+          # ৫. AndroidManifest.xml (Internet permission সহ)
           cat <<EOF > app/src/main/AndroidManifest.xml
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <application
                   android:label="${{ steps.meta.outputs.name }}"
-                  android:icon="@mipmap/ic_launcher"
                   android:theme="@style/Theme.AppCompat.Light.NoActionBar"
                   android:usesCleartextTraffic="true">
                   <activity android:name=".MainActivity" android:exported="true">
@@ -96,7 +98,7 @@ jobs:
           </manifest>
           EOF
 
-          # ৪. Layout (SwipeRefreshLayout + WebView)
+          # ৬. Layout (SwipeRefreshLayout + WebView)
           cat <<EOF > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
@@ -111,7 +113,7 @@ jobs:
           </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
           EOF
 
-          # ৫. MainActivity.java (Full logic)
+          # ৭. MainActivity.java (Logic: Swipe to Refresh + Back Button)
           PACKAGE_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > app/src/main/java/$PACKAGE_PATH/MainActivity.java
           package ${{ steps.meta.outputs.package }};
@@ -137,7 +139,6 @@ jobs:
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
-                  settings.setDatabaseEnabled(true);
 
                   webView.setWebViewClient(new WebViewClient() {
                       @Override
@@ -148,8 +149,11 @@ jobs:
 
                   webView.loadUrl("${{ steps.meta.outputs.url }}");
 
-                  swipeRefresh.setOnRefreshListener(() -> {
-                      webView.reload();
+                  swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                      @Override
+                      public void onRefresh() {
+                          webView.reload();
+                      }
                   });
               }
 
@@ -164,24 +168,13 @@ jobs:
           }
           EOF
 
-          # ৬. Gradle Wrapper সেটাপ
+          # ৮. গ্র্যাডল রেডি করা
           gradle wrapper --gradle-version 8.5
-
-      - name: Generate App Icons
-        run: |
-          # আইকন জেনারেশন (যদি assets এ icon.png থাকে)
-          if [ -f "assets/icon.png" ]; then
-            npm install -g @capacitor/assets
-            npx capacitor-assets generate --android --assetPath assets
-          else
-            # ডিফল্ট আইকন ফোল্ডার তৈরি (এরর এড়াতে)
-            mkdir -p app/src/main/res/mipmap-mdpi
-          fi
 
       - name: Build APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
