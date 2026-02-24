@@ -47,7 +47,8 @@ jobs:
             "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true },
             "plugins": {
               "SplashScreen": {
-                "launchAutoHide": false,
+                "launchAutoHide": true,
+                "launchShowDuration": 3000,
                 "backgroundColor": "#ffffff",
                 "androidScaleType": "CENTER_CROP",
                 "showSpinner": true
@@ -70,7 +71,7 @@ jobs:
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity - ইমপোর্ট ছাড়াই প্লাগইন হ্যান্ডলিং (এরর ফিক্স)
+          # MainActivity - রিফ্রেশ এবং ব্যাক বাটন (জাভা এরর মুক্ত ভার্সন)
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
@@ -97,9 +98,7 @@ jobs:
                       
                       SwipeRefreshLayout swipe = new SwipeRefreshLayout(this);
                       parent.removeView(webView);
-                      swipe.addView(webView, new ViewGroup.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, 
-                              ViewGroup.LayoutParams.MATCH_PARENT));
+                      swipe.addView(webView, new ViewGroup.LayoutParams(-1, -1));
                       
                       progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
                       progressBar.setIndeterminate(true);
@@ -107,8 +106,7 @@ jobs:
                       
                       RelativeLayout layout = new RelativeLayout(this);
                       layout.addView(swipe);
-                      layout.addView(progressBar, new RelativeLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, 15));
+                      layout.addView(progressBar, new RelativeLayout.LayoutParams(-1, 15));
                       
                       parent.addView(layout, index);
                       swipe.setOnRefreshListener(() -> webView.reload());
@@ -125,13 +123,8 @@ jobs:
                               super.onPageFinished(view, url);
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
-                              
-                              // ডায়নামিক প্লাগইন কল (কোনো ইমপোর্ট লাগবে না)
-                              getBridge().executeOnMainThread(() -> {
-                                  if (getBridge().getPlugin("SplashScreen") != null) {
-                                      getBridge().getPlugin("SplashScreen").getInstance().hide(null);
-                                  }
-                              });
+                              // JavaScript Inject করে স্প্ল্যাশ স্ক্রিন হাইড করা
+                              view.evaluateJavascript("window.Capacitor.Plugins.SplashScreen.hide()", null);
                           }
                       });
                   }
@@ -148,7 +141,6 @@ jobs:
           }
           EOF
 
-          # ভার্সন সিঙ্ক
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
 
