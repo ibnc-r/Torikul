@@ -1,9 +1,10 @@
-name: URL to APK Converter
+name: URL to APK Converter (Fixed & Permissions)
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,6 +21,7 @@ jobs:
       - name: Extract Metadata
         id: meta
         run: |
+          # assets/url-metadata.json থেকে ডেটা রিড করা
           APP_NAME=$(jq -r '.appName' assets/url-metadata.json)
           APP_PKG=$(jq -r '.appPackage' assets/url-metadata.json)
           APP_URL=$(jq -r '.appUrl' assets/url-metadata.json)
@@ -38,14 +40,11 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Initialize Capacitor for URL
+      - name: Initialize Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
-          # ডামি ফোল্ডার তৈরি (Capacitor এর জন্য জরুরি)
-          mkdir -p dist
-          touch dist/index.html
+          mkdir -p dist && touch dist/index.html
           
-          # ক্যাপাসিটর কনফিগ তৈরি (সার্ভার ইউআরএল সহ)
           cat <<EOF > capacitor.config.json
           {
             "appId": "${{ steps.meta.outputs.package }}",
@@ -58,27 +57,34 @@ jobs:
           }
           EOF
           
-          npx cap add android
+          npx cap add android || true
 
-      - name: Configure Android Features (Back Button & Refresh)
+      - name: Configure Permissions & Fixed Kotlin Conflict
         run: |
-          # আইকন জেনারেট
+          # ১. ডুপ্লিকেট ক্লাস এরর ফিক্স (Kotlin Conflict Fix)
+          # build.gradle এ constraints যোগ করা হচ্ছে যাতে সব লাইব্রেরি একই Kotlin ভার্সন পায়
+          sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
+
+          # ২. আইকন জেনারেট
           if [ -f "assets/icon.png" ]; then
             npx capacitor-assets generate --android
-          else
-            # আইকন না থাকলে ডিফল্ট আইকন দিয়ে রান করা
-            echo "Icon not found, using default."
           fi
 
-          # ইন্টারনেট পারমিশন \n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+          # ৩. পারমিশন ম্যানেজমেন্ট (AndroidManifest.xml)
+          # ইন্টারনেটের পাশাপাশি স্টোরেজ রিড এবং রাইট পারমিশন যোগ করা
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml
+          
+          # নোট: আরও পারমিশন যোগ করতে চাইলে উপরের লাইনে একইভাবে নিচের মতো কোড যুক্ত করতে পারেন:
+          # ক্যামেরা: <uses-permission android:name="android.permission.CAMERA" />
+          # লোকেশন: <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+          # মাইক্রোফোন: <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-          # ভার্সন আপডেট
+          # ৪. ডায়নামিক ভার্সন এবং নাম সেট করা
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.meta.outputs.version }}\"/" android/app/build.gradle
-
-          # অ্যাপের নাম আপডেট
-          sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
+          if [ -f "android/app/src/main/res/values/strings.xml" ]; then
+            sed -i "s/\"app_name\">.*<\/string>/\"app_name\">${{ steps.meta.outputs.name }}<\/string>/" android/app/src/main/res/values/strings.xml
+          fi
 
           npx cap sync android
 
