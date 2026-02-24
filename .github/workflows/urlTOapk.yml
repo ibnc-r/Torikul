@@ -47,8 +47,7 @@ jobs:
             "server": { "url": "${{ steps.meta.outputs.url }}", "cleartext": true },
             "plugins": {
               "SplashScreen": {
-                "launchAutoHide": true,
-                "launchShowDuration": 3000,
+                "launchAutoHide": false,
                 "backgroundColor": "#ffffff",
                 "androidScaleType": "CENTER_CROP",
                 "showSpinner": true
@@ -58,26 +57,32 @@ jobs:
           EOF
           npx cap sync android
 
-      - name: Branding & Assets
+      - name: Branding & Error Page Download
         run: |
+          # আইকন জেনারেশন
           if [ -f "assets/icon.png" ]; then
             npm install @capacitor/assets --save-dev
             npx capacitor-assets generate --android --assetPath assets
           fi
+          
+          # কাস্টম এরর পেজ ডাউনলোড এবং সঠিক জায়গায় স্থাপন
+          mkdir -p android/app/src/main/assets/public
+          curl -L https://raw.githubusercontent.com/ibnc-r/Torikul/refs/heads/main/assets/error.html -o android/app/src/main/assets/public/error.html
 
       - name: Professional Optimization
         run: |
-          # ডুপ্লিকেট ক্লাস ফিক্স
           echo "kotlin.stdlib.default.dependency=false" >> android/gradle.properties
           sed -i '/dependencies {/a \    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")\n    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")\n    }' android/app/build.gradle
 
-          # MainActivity - রিফ্রেশ এবং ব্যাক বাটন (জাভা এরর মুক্ত ভার্সন)
+          # MainActivity - কাস্টম এরর পেজ লজিক সহ
           PKG_PATH=$(echo "${{ steps.meta.outputs.package }}" | sed 's/\./\//g')
           cat <<EOF > "android/app/src/main/java/$PKG_PATH/MainActivity.java"
           package ${{ steps.meta.outputs.package }};
           import android.os.Bundle;
           import android.view.View;
           import android.view.ViewGroup;
+          import android.webkit.WebResourceError;
+          import android.webkit.WebResourceRequest;
           import android.webkit.WebView;
           import android.widget.ProgressBar;
           import android.widget.RelativeLayout;
@@ -87,6 +92,13 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               private ProgressBar progressBar;
+              private String mainUrl;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  mainUrl = "${{ steps.meta.outputs.url }}";
+              }
 
               @Override
               public void onStart() {
@@ -115,7 +127,9 @@ jobs:
                           @Override
                           public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                               super.onPageStarted(view, url, favicon);
-                              progressBar.setVisibility(View.VISIBLE);
+                              if (!url.contains("error.html")) {
+                                  progressBar.setVisibility(View.VISIBLE);
+                              }
                           }
 
                           @Override
@@ -123,8 +137,20 @@ jobs:
                               super.onPageFinished(view, url);
                               swipe.setRefreshing(false);
                               progressBar.setVisibility(View.GONE);
-                              // JavaScript Inject করে স্প্ল্যাশ স্ক্রিন হাইড করা
-                              view.evaluateJavascript("window.Capacitor.Plugins.SplashScreen.hide()", null);
+                              
+                              getBridge().executeOnMainThread(() -> {
+                                  if (getBridge().getPlugin("SplashScreen") != null) {
+                                      getBridge().getPlugin("SplashScreen").getInstance().hide(null);
+                                  }
+                              });
+                          }
+
+                          @Override
+                          public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                              if (request.isForMainFrame()) {
+                                  // কানেকশন এরর হলে লোকাল error.html লোড হবে
+                                  view.loadUrl("file:///android_asset/public/error.html");
+                              }
                           }
                       });
                   }
@@ -132,8 +158,11 @@ jobs:
 
               @Override
               public void onBackPressed() {
-                  if (getBridge().getWebView().canGoBack()) {
-                      getBridge().getWebView().goBack();
+                  WebView webView = getBridge().getWebView();
+                  if (webView.getUrl().contains("error.html")) {
+                      webView.loadUrl(mainUrl); // এরর পেজে থাকাকালীন ব্যাক চাপলে আবার মেইন ইউআরএল ট্রাই করবে
+                  } else if (webView.canGoBack()) {
+                      webView.goBack();
                   } else {
                       super.onBackPressed();
                   }
