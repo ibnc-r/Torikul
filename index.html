@@ -7,11 +7,6 @@
     <meta name="keywords" content="A Student, social worker, Helpfulness, Bangladeshi.">
     <meta name="author" content="MD TARIKUL ISLAM">
     <title>TARIKUL ISLAM | Student Nurse</title>
-    
-    <!-- Favicon - dynamically set from profile image -->
-    <link rel="icon" type="image/x-icon" href="data:image/x-icon;,">
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     
     <!-- নতুন লাইব্রেরি লিঙ্ক -->
@@ -586,9 +581,6 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             object-fit: cover;
             box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
             margin-bottom: 20px;
-            /* Entrance Animation এর জন্য ইনিশিয়াল স্টেট */
-            transform: scale(0); 
-            opacity: 0;
         }
         
         h1 {
@@ -955,7 +947,6 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             }
         }
     </style>
-
 </head>
 
 <body>
@@ -978,7 +969,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
     <div class="controls-right">
         <!-- Theme Button (গোলাকার আইকন) -->
         <button class="control-btn theme-toggle" onclick="toggleThemeDialog()" aria-label="Theme Settings">
-            <i class="fas fa-palette theme-btn-icon" id="theme-icon"></>
+            <i class="fas fa-palette theme-btn-icon" id="theme-icon"></i>
         </button>
         
         <!-- Theme Dialog Box -->
@@ -1017,7 +1008,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             <!-- Profile Bubble Message (আপডেটেড) -->
             <div class="profile-bubble" id="profileBubble"></div>            
 
-            <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img" id="profileImage">
+            <img src="https://raw.githubusercontent.com/ibnc-r/Resources/refs/heads/main/Torikul_img.png" alt="TARIKUL ISLAM" class="profile-img">
             
             <h1>TARIKUL <span>ISLAM</span></h1>
             <p class="tagline">A Student Nurse of ISLAMI BANK NURSING COLLEGE, RAJSHAHI.</p>
@@ -1147,85 +1138,9 @@ body.dark-mode .theme-toggle-btn .moon-icon {
         const formContainer = document.getElementById('contact-form-container');
         const themeDialog = document.getElementById('themeDialog');
         const profileBubble = document.getElementById('profileBubble');
-        const profileImg = document.getElementById('profileImage');
         const MAX_SMS_LENGTH = 160;
         
-        // --- Favicon সেট করার ফাংশন (প্রোফাইল ইমেজ থেকে এবং গোলাকার) ---
-        function setFaviconFromImage() {
-            if (!profileImg || !profileImg.src) return;
-            
-            // ক্যানভাস তৈরি করে ছবি রিসাইজ করা
-            const canvas = document.createElement('canvas');
-            canvas.width = 32;
-            canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-            
-            // বৃত্তাকার পাথ তৈরি করা
-            ctx.beginPath();
-            ctx.arc(16, 16, 16, 0, Math.PI * 2); // (centerX, centerY, radius, startAngle, endAngle)
-            ctx.closePath();
-            ctx.clip(); // ক্লিপিং প্রয়োগ করা - এর পর যা আঁকা হবে তা শুধু বৃত্তের ভিতরে দেখাবে
-            
-            const img = new Image();
-            img.crossOrigin = "Anonymous"; // CORS ইস্যু এড়াতে
-            img.src = profileImg.src;
-            
-            img.onload = function() {
-                // ছবি ড্র করে Favicon সাইজে (এবার এটি বৃত্তের ভিতরেই আঁকা হবে)
-                ctx.drawImage(img, 0, 0, 32, 32);
-                
-                // ঐচ্ছিক: বৃত্তের চারপাশে একটি হালকা বর্ডার যোগ করা (যদি ইচ্ছে করে)
-                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-                ctx.lineWidth = 0.5;
-                ctx.beginPath();
-                ctx.arc(16, 16, 15.5, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // Favicon লিঙ্ক খুঁজে বা তৈরি করে সেট করা
-                let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-                link.type = 'image/x-icon';
-                link.rel = 'shortcut icon';
-                link.href = canvas.toDataURL('image/x-icon');
-                document.getElementsByTagName('head')[0].appendChild(link);
-                
-                console.log('Circular favicon set successfully from profile image');
-            };
-            
-            img.onerror = function() {
-                console.log('Could not load image for favicon');
-                // ব্যর্থ হলে ডিফল্ট favicon
-                let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-                link.type = 'image/x-icon';
-                link.rel = 'shortcut icon';
-                link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx="50" cy="50" r="50" fill="%2327ae60"/><text x="50" y="70" font-size="70" text-anchor="middle" fill="white">T</text></svg>';
-                document.getElementsByTagName('head')[0].appendChild(link);
-            };
-        }
-        
-        // --- ১. Profile Picture Entrance Animation (Zoom Out) ---
-        function animateProfileEntrance() {
-            // একটি টাইমলাইন তৈরি করি
-            const tl = gsap.timeline();
-            
-            // ছবিটি প্রথমে দেখা যাচ্ছে না (CSS এ scale:0 এবং opacity:0 দেওয়া আছে)
-            // এখন আমরা একে খুব বড় (scale:5) করে দেখাব এবং opacity বাড়াব, তারপর zoom out করে normal করব।
-            tl.to(profileImg, {
-                scale: 5,          // খুব জুম ইন
-                opacity: 1,
-                duration: 0.1,      // খুব দ্রুত বড় করে ফেলা
-                ease: "power1.in"
-            })
-            .to(profileImg, {
-                scale: 1,           // নিজের সাইজে ফিরে আসা (zoom out)
-                duration: 1.2,
-                ease: "elastic.out(1, 0.5)", // একটি সুন্দর স্মুথ ইলাস্টিক ইফেক্ট
-                onComplete: () => {
-                    console.log("Entrance animation complete");
-                }
-            });
-        }
-
-        // --- ২. Profile Bubble Animation with GSAP (আপডেটেড) ---
+        // --- ১. Profile Bubble Animation with GSAP (আপডেটেড) ---
         function animateProfileBubble() {
             // প্রথমে বাবলটি আনিমেশন দিয়ে দেখানো
             gsap.fromTo(profileBubble, 
@@ -1260,7 +1175,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             }, 4000);
         }
         
-        // --- ৩. Theme & Color Picker Functions ---
+        // --- ২. Theme & Color Picker Functions ---
         function toggleThemeDialog() {
             if (themeDialog.style.display === 'block') {
                 themeDialog.style.display = 'none';
@@ -1372,7 +1287,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             themeDialog.style.display = 'none';
         }
         
-        // --- ৪. Swiper.js Gallery (আপডেটেড - আপনার এক্সাম্পল অনুযায়ী) ---
+        // --- ৩. Swiper.js Gallery (আপডেটেড - আপনার এক্সাম্পল অনুযায়ী) ---
         function initSwiper() {
             new Swiper(".mySwiper", {
                 effect: "coverflow",
@@ -1398,7 +1313,7 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             });
         }
         
-        // --- ৫. Custom Interactive Cursor (শুধুমাত্র ডেস্কটপে) ---
+        // --- ৪. Custom Interactive Cursor (শুধুমাত্র ডেস্কটপে) ---
         function initCustomCursor() {
             // শুধুমাত্র ডেস্কটপে কার্সর দেখাবে
             if (window.innerWidth < 769) return;
@@ -1572,85 +1487,78 @@ body.dark-mode .theme-toggle-btn .moon-icon {
             }
         }
         
-        // ৬. টাইপিং মেসেজ লিস্ট
-        const messages = ["Hello! 🤗", "হ্যালো! 🥰", "مرحباً! 🌙", "Welcome! ✨", "স্বাগতম! ❤️"];
-        let messageIndex = 0;
-        const bubbleElement = document.getElementById('profileBubble');
+// ১. টাইপিং মেসেজ লিস্ট
+const messages = ["Hello! 🤗", "হ্যালো! 🥰", "مرحباً! 🌙", "Welcome! ✨", "স্বাগতম! ❤️"];
+let messageIndex = 0;
+const bubbleElement = document.getElementById('profileBubble');
 
-        // ৭. টাইপিং ইফেক্ট ফাংশন (উন্নত রেসপনসিভ লজিক)
-        async function typeEffect(text) {
-            // টাইপিং শুরু
-            for (let i = 0; i <= text.length; i++) {
-                // যদি i ০ হয়, তবে অদৃশ্য স্পেস দেখাবে যাতে বাবলটি লাফিয়ে ছোট না হয়
-                bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
-                await new Promise(res => setTimeout(res, 100));
-            }
-            
-            // লিখা শেষে বিরতি
-            await new Promise(res => setTimeout(res, 2000));
-            
-            // মোছার সময় (Backspacing)
-            for (let i = text.length; i >= 0; i--) {
-                bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
-                await new Promise(res => setTimeout(res, 50));
-            }
-        }
+// ২. টাইপিং ইফেক্ট ফাংশন (উন্নত রেসপনসিভ লজিক)
+async function typeEffect(text) {
+    // টাইপিং শুরু
+    for (let i = 0; i <= text.length; i++) {
+        // যদি i ০ হয়, তবে অদৃশ্য স্পেস দেখাবে যাতে বাবলটি লাফিয়ে ছোট না হয়
+        bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
+        await new Promise(res => setTimeout(res, 100));
+    }
+    
+    // লিখা শেষে বিরতি
+    await new Promise(res => setTimeout(res, 2000));
+    
+    // মোছার সময় (Backspacing)
+    for (let i = text.length; i >= 0; i--) {
+        bubbleElement.innerHTML = text.substring(0, i) || "&nbsp;";
+        await new Promise(res => setTimeout(res, 50));
+    }
+}
 
-        // ৮. মেইন লুপ ফাংশন
-        async function startTypingLoop() {
-            // বাবলটি এনিমেশন দিয়ে শো করা
-            gsap.fromTo(bubbleElement, 
-                { opacity: 0, scale: 0.5, y: 10 }, // এখানে x সরানো হয়েছে
-                { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "back.out(1.7)" }
-            );
-            bubbleElement.classList.add('animated');
 
-            while (true) {
-                await typeEffect(messages[messageIndex]);
-                messageIndex = (messageIndex + 1) % messages.length;
-                await new Promise(res => setTimeout(res, 500));
-            }
-        }
+// ৩. মেইন লুপ ফাংশন
+async function startTypingLoop() {
+    // বাবলটি এনিমেশন দিয়ে শো করা
+    gsap.fromTo(bubbleElement, 
+        { opacity: 0, scale: 0.5, y: 10 }, // এখানে x সরানো হয়েছে
+        { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: "back.out(1.7)" }
+    );
+    bubbleElement.classList.add('animated');
 
-        // ৯. DOMContentLoaded (ইনিশিয়ালাইজেশন)
-        document.addEventListener('DOMContentLoaded', () => {
-            // AOS - স্ক্রল ইফেক্ট বারবার দেখাবে (mirror false রাখা হয়েছে)
-            AOS.init({ 
-                duration: 800, 
-                once: false,      // এলিমেন্ট বারবার দেখাবে (স্ক্রল উপরে উঠলে লুকাবে না)
-            });
+    while (true) {
+        await typeEffect(messages[messageIndex]);
+        messageIndex = (messageIndex + 1) % messages.length;
+        await new Promise(res => setTimeout(res, 500));
+    }
+}
 
-            // থিম ও কালার
-            setInitialTheme();
-            updateThemeIcon();
-            loadPrimaryColor();
-            
-            // মিউজিক আইকন
-            if(musicIcon) {
-                musicIcon.classList.remove('fa-pause'); 
-                musicIcon.classList.add('fa-music');
-            }
-            
-            // Entrance Animation: প্রোফাইল পিকচার জুম আউট এনিমেশন চালু
-            animateProfileEntrance();
-            
-            // Favicon সেট করা (প্রোফাইল ইমেজ থেকে - গোলাকার)
-            setFaviconFromImage();
-            
-            // অন্যান্য ফিচার চালু করা
-            initSwiper();
-            initCustomCursor();
-            startTypingLoop(); // এটিই টাইপিং এবং এনিমেশন দুটিই সামলাবে
-            
-            // রিসাইজ ইভেন্ট
-            window.addEventListener('resize', () => {
-                initCustomCursor();
-                document.querySelectorAll('.swiper').forEach(s => s.swiper && s.swiper.update());
-            });
-            
-            // Footer
-            document.querySelector('footer').innerHTML = `&copy; ${new Date().getFullYear()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
-        });
+// ৪. DOMContentLoaded (ইনিশিয়ালাইজেশন)
+document.addEventListener('DOMContentLoaded', () => {
+    // AOS
+    AOS.init({ duration: 800, once: false });
+
+    // থিম ও কালার
+    setInitialTheme();
+    updateThemeIcon();
+    loadPrimaryColor();
+    
+    // মিউজিক আইকন
+    if(musicIcon) {
+        musicIcon.classList.remove('fa-pause'); 
+        musicIcon.classList.add('fa-music');
+    }
+    
+    // শুধু এই ৩টি নতুন ফিচার চালু করো (animateProfileBubble বাদ দেওয়া হয়েছে)
+    initSwiper();
+    initCustomCursor();
+    startTypingLoop(); // এটিই টাইপিং এবং এনিমেশন দুটিই সামলাবে
+    
+    // রিসাইজ ইভেন্ট
+    window.addEventListener('resize', () => {
+        initCustomCursor();
+        document.querySelectorAll('.swiper').forEach(s => s.swiper && s.swiper.update());
+    });
+    
+    // Footer
+    document.querySelector('footer').innerHTML = `&copy; ${new Date().getFullYear()} Tnayem48. All Rights Reserved. | Built with <span class="heart">❤️</span> to serve our college.`;
+});
+
 
     </script>
 </body>
